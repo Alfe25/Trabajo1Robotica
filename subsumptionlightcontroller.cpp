@@ -15,6 +15,7 @@
 #include "groundsensor.h"
 #include "groundmemorysensor.h"
 #include "batterysensor.h"
+#include "reallightsensor.h"
 
 /******************** Actuators ****************/
 #include "wheelsactuator.h"
@@ -35,11 +36,13 @@ using namespace std;
 /******************************************************************************/
 /******************************************************************************/
 
-#define BEHAVIORS	3
+#define BEHAVIORS 3
 
-#define AVOID_PRIORITY 		0
-#define RELOAD_PRIORITY 	1
-#define NAVIGATE_PRIORITY 2
+#define AVOID_PRIORITY 0
+#define RELOAD_PRIORITY 1
+#define LED_PRIORITY 2
+//#define NAVIGATE_PRIORITY 3
+
 
 #define PROXIMITY_THRESHOLD 0.3
 #define BATTERY_THRESHOLD 0.5
@@ -61,8 +64,6 @@ CSubsumptionLightController::CSubsumptionLightController (const char* pch_name, 
 	m_acWheels = (CWheelsActuator*) m_pcEpuck->GetActuator(ACTUATOR_WHEELS);
 	/* Set Prox Sensor */
 	m_seProx = (CEpuckProximitySensor*) m_pcEpuck->GetSensor(SENSOR_PROXIMITY);
-	/* Set light Sensor */
-	m_seLight = (CLightSensor*) m_pcEpuck->GetSensor(SENSOR_LIGHT);
 	/* Set contact Sensor */
 	m_seContact = (CContactSensor*) m_pcEpuck->GetSensor (SENSOR_CONTACT);
 	/* Set ground Sensor */
@@ -71,7 +72,8 @@ CSubsumptionLightController::CSubsumptionLightController (const char* pch_name, 
 	m_seGroundMemory = (CGroundMemorySensor*) m_pcEpuck->GetSensor (SENSOR_GROUND_MEMORY);
 	/* Set battery Sensor */
 	m_seBattery = (CBatterySensor*) m_pcEpuck->GetSensor (SENSOR_BATTERY);
-
+	/* Set light Switch Sensor */
+	m_seLight = (CLightSensor*) m_pcEpuck->GetSensor(SENSOR_LIGHT);
 	
 	/* Initilize Variables */
 	m_fLeftSpeed = 0.0;
@@ -97,9 +99,8 @@ CSubsumptionLightController::~CSubsumptionLightController()
 	}
 }
 
-
 /******************************************************************************/
-/******************************************************************************/
+	/***AQUI EMPIEZA EL CODIGO A PROGRAMAR***/
 
 void CSubsumptionLightController::SimulationStep(unsigned n_step_number, double f_time, double f_step_interval)
 {
@@ -142,11 +143,11 @@ void CSubsumptionLightController::ExecuteBehaviors ( void )
 		m_fActivationTable[i][2] = 0.0;
 	}
 	/* Set Leds to BLACK */
-	m_pcEpuck->SetAllColoredLeds(	LED_COLOR_BLACK);
-	
+	m_pcEpuck->SetAllColoredLeds(LED_COLOR_BLACK);
+	SwitchLight(LED_PRIORITY);
 	ObstacleAvoidance ( AVOID_PRIORITY );
-  GoLoad ( RELOAD_PRIORITY );
-	Navigate ( NAVIGATE_PRIORITY );
+  	GoLoad ( RELOAD_PRIORITY );
+	//Navigate ( NAVIGATE_PRIORITY );
 }
 
 /******************************************************************************/
@@ -158,7 +159,7 @@ void CSubsumptionLightController::Coordinator ( void )
 	for ( nBehavior = 0 ; nBehavior < BEHAVIORS ; nBehavior++ )
 	{
 		if ( m_fActivationTable[nBehavior][2] == 1.0 )
-		{
+		{	
 			break;
 		}
 	}
@@ -167,20 +168,72 @@ void CSubsumptionLightController::Coordinator ( void )
 	m_fRightSpeed = m_fActivationTable[nBehavior][1];
 	
   printf("%d %2.4f %2.4f \n", nBehavior, m_fLeftSpeed, m_fRightSpeed);
-	
-  if (m_nWriteToFile ) 
+	printf("\n");	
+
+  /*if (m_nWriteToFile ) 
 	{
-		/* INIT: WRITE TO FILES */
-		/* Write coordinator ouputs */
+		// INIT: WRITE TO FILES 
+		// Write coordinator ouputs 
 		FILE* fileOutput = fopen("outputFiles/coordinatorOutput", "a");
 		fprintf(fileOutput,"%2.4f %d %2.4f %2.4f \n", m_fTime, nBehavior, m_fLeftSpeed, m_fRightSpeed);
 		fclose(fileOutput);
-		/* END WRITE TO FILES */
-	}
+		// END WRITE TO FILES 
+	}*/
 }
 
 /******************************************************************************/
 /******************************************************************************/
+
+/**FUNCION AÑADIDA**/
+void CSubsumptionLightController::SwitchLight( unsigned int un_priority ){
+	m_fActivationTable[un_priority][0] = SPEED;
+	m_fActivationTable[un_priority][1] = SPEED;
+	m_fActivationTable[un_priority][2] = 1.0;
+
+	double* light = m_seLight->GetSensorReading(m_pcEpuck);
+
+	double totalLight = 0;
+  for ( int i = 0 ; i < m_seLight->GetNumberOfInputs() ; i++)
+  {
+    printf("%2f ", light[i]);
+  }
+  
+  totalLight = light[0]+light[7];
+	//printf("-- %2f ", totalLight);
+	//printf("\n");
+
+	if ( totalLight >= 0.8)
+	{
+		m_seLight->SwitchNearestLight(0);
+	}
+
+  //if ( totalLight == 0 )
+  //m_seLight->SwitchNearestLight(1);
+	/* GO Light */
+	if ( light[0] * light[7] == 0.0 )
+	{
+		/* Calc light intensity at the left and right */
+		double lightLeft 	= light[0] + light[1] + light[2] + light[3]; //sensores por la izquierda
+		double lightRight = light[4] + light[5] + light[6] + light[7];		// sensores por la derecha
+
+		/* If light on the left */
+		if ( lightLeft > lightRight )
+		{
+			/* Turn left */
+			m_acWheels->SetSpeed(-500,500); 	// gira a la izquierda
+		}
+		else
+		{
+			/* Turn right */
+			m_acWheels->SetSpeed(500,-500);		// gira a la derecha
+		}
+	}
+	else{
+		m_acWheels->SetSpeed(500,500);		// recto
+	}
+}
+
+
 
 void CSubsumptionLightController::ObstacleAvoidance ( unsigned int un_priority )
 {
@@ -251,7 +304,7 @@ void CSubsumptionLightController::ObstacleAvoidance ( unsigned int un_priority )
 /******************************************************************************/
 /******************************************************************************/
 
-void CSubsumptionLightController::Navigate ( unsigned int un_priority )
+/*void CSubsumptionLightController::Navigate ( unsigned int un_priority )
 {
 	m_fActivationTable[un_priority][0] = SPEED;
 	m_fActivationTable[un_priority][1] = SPEED;
@@ -259,14 +312,14 @@ void CSubsumptionLightController::Navigate ( unsigned int un_priority )
 
 	if (m_nWriteToFile ) 
 	{
-		/* INIT: WRITE TO FILES */
-		/* Write level of competence ouputs */
+		// INIT: WRITE TO FILES 
+		// Write level of competence ouputs 
 		FILE* fileOutput = fopen("outputFiles/navigateOutput", "a");
 		fprintf(fileOutput,"%2.4f %2.4f %2.4f %2.4f \n", m_fTime, m_fActivationTable[un_priority][2], m_fActivationTable[un_priority][0], m_fActivationTable[un_priority][1]);
 		fclose(fileOutput);
-		/* END WRITE TO FILES */
+		// END WRITE TO FILES 
 	}
-}
+}*/
 		
 /******************************************************************************/
 /******************************************************************************/
