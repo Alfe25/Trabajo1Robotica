@@ -80,24 +80,24 @@ CSubsumptionLightExp::CSubsumptionLightExp(const char* pch_name, const char* par
 		m_fRobotOrientations = new double[m_nRobotsNumber];
 		for ( int i = 0 ; i < m_nRobotsNumber ; i++)
 		{
-			m_pcvRobotPositions[i].x 	= -0.95;
-			m_pcvRobotPositions[i].y 	= -0.95;
-			m_fRobotOrientations[i] 	= 0.95;
+			m_pcvRobotPositions[i].x 	= -0.0;
+			m_pcvRobotPositions[i].y 	= -0.0;
+			m_fRobotOrientations[i] 	= 0.0;
 		}
 	
-		m_fLightSensorRange = 1.0; //1 meter
+		m_fLightSensorRange = 0.8; // meters
 
 		m_nNumberOfLightObject = 5;
 		m_pcvLightObjects = new dVector2[m_nNumberOfLightObject];
 		
 		m_pcvLightObjects[0].x = 0.5;
-		m_pcvLightObjects[0].y = 0.5;
+		m_pcvLightObjects[0].y = -0.75;
 		m_pcvLightObjects[1].x = -0.5;
 		m_pcvLightObjects[1].y = -0.5;
 		m_pcvLightObjects[2].x = -0.5;
 		m_pcvLightObjects[2].y = 0.5;
-		m_pcvLightObjects[3].x = 0.75;
-		m_pcvLightObjects[3].y = -0.95;
+		m_pcvLightObjects[3].x = 0.5;
+		m_pcvLightObjects[3].y = 0.5;
 		m_pcvLightObjects[4].x = 0.90;
 		m_pcvLightObjects[4].y = 0.0;
 
