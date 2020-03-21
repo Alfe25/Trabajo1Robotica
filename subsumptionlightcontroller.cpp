@@ -43,7 +43,7 @@ using namespace std;
 #define LED_PRIORITY 2
 
 
-#define PROXIMITY_THRESHOLD 0.8
+#define PROXIMITY_THRESHOLD 0.7
 #define BATTERY_THRESHOLD 0.5
 
 #define SPEED 500.0
@@ -77,7 +77,7 @@ CSubsumptionLightController::CSubsumptionLightController (const char* pch_name, 
 	/* Initilize Variables */
 	m_fLeftSpeed = 0.0;
 	m_fRightSpeed = 0.0;
-
+	m_NLIGHT = 0.0;
 
 	/* Create TABLE for the COORDINATOR */
 	m_fActivationTable = new double* [BEHAVIORS];
@@ -126,7 +126,7 @@ void CSubsumptionLightController::SimulationStep(unsigned n_step_number, double 
 
 		/* Write robot wheels speed */
 		FILE* fileWheels = fopen("outputFiles/robotWheels", "a");
-		fprintf(fileWheels,"%2.4f %2.4f %2.4f \n", m_fTime, m_fLeftSpeed, m_fRightSpeed);
+		fprintf(fileWheels,"%2.4f %2.4f %2.4f %2.0f\n", m_fTime, m_fLeftSpeed, m_fRightSpeed,m_NLIGHT);
 		fclose(fileWheels);
 		/* END WRITE TO FILES */
 	}
@@ -166,7 +166,7 @@ void CSubsumptionLightController::Coordinator ( void )
 	m_fLeftSpeed = m_fActivationTable[nBehavior][0];
 	m_fRightSpeed = m_fActivationTable[nBehavior][1];
 	
-  printf("%d %2.4f %2.4f \n", nBehavior, m_fLeftSpeed, m_fRightSpeed);
+  printf("%d %2.4f %2.4f %2.0f \n", nBehavior, m_fLeftSpeed, m_fRightSpeed,m_NLIGHT);
 	printf("\n");	
 
   if (m_nWriteToFile ) 
@@ -174,7 +174,7 @@ void CSubsumptionLightController::Coordinator ( void )
 		// INIT: WRITE TO FILES 
 		// Write coordinator ouputs 
 		FILE* fileOutput = fopen("outputFiles/coordinatorOutput", "a");
-		fprintf(fileOutput,"%2.4f %d %2.4f %2.4f \n", m_fTime, nBehavior, m_fLeftSpeed, m_fRightSpeed);
+		fprintf(fileOutput,"%2.4f %d %2.4f %2.4f %2.0f \n", m_fTime, nBehavior, m_fLeftSpeed, m_fRightSpeed,m_NLIGHT);
 		fclose(fileOutput);
 		// END WRITE TO FILES 
 	}
@@ -203,6 +203,7 @@ void CSubsumptionLightController::SwitchLight( unsigned int un_priority ){
 		m_fActivationTable[un_priority][2] = 1.0;
 		m_fActivationTable[un_priority][0] = SPEED;
 		m_fActivationTable[un_priority][1] = SPEED;
+		m_NLIGHT=m_NLIGHT+1;
 	}
 	//m_pcEpuck->SetAllColoredLeds(LED_COLOR_YELLOW);
 	/* GO Light */
@@ -299,6 +300,17 @@ void CSubsumptionLightController::ObstacleAvoidance ( unsigned int un_priority )
 		m_fActivationTable[un_priority][0] = fVLinear - fC1 * fVAngular;
 		m_fActivationTable[un_priority][1] = fVLinear + fC1 * fVAngular;
 		m_fActivationTable[un_priority][2] = 1.0;
+	}
+	//Problema, luz y obstáculo
+	if((prox[3] * prox[1] * prox[2])*(light[0]+light[1] +light[2]+light[3]+light[4] +light[5]+light[6]+light[7]) != 0){
+		m_fActivationTable[un_priority][2] = 1.0;
+		m_fActivationTable[un_priority][0] = SPEED;
+		m_fActivationTable[un_priority][1] = SPEED;
+	}
+	if((prox[5] * prox[6] * prox[7])*(light[0]+light[1] +light[2]+light[3]+light[4] +light[5]+light[6]+light[7]) != 0){
+		m_fActivationTable[un_priority][2] = 1.0;
+		m_fActivationTable[un_priority][0] = SPEED;
+		m_fActivationTable[un_priority][1] = SPEED;
 	}
 	
 	if (m_nWriteToFile ) 

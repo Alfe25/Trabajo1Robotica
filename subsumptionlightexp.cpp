@@ -88,6 +88,7 @@ CSubsumptionLightExp::CSubsumptionLightExp(const char* pch_name, const char* par
 		m_fLightSensorRange = 0.8; // meters
 
 		m_nNumberOfLightObject = 5;
+
 		m_pcvLightObjects = new dVector2[m_nNumberOfLightObject];
 		
 		m_pcvLightObjects[0].x = 0.5;

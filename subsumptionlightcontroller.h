@@ -30,13 +30,13 @@ private:
 		CContactSensor* m_seContact;
 		CGroundSensor* m_seGround;
 		CGroundMemorySensor* m_seGroundMemory;
-		CBatterySensor* m_seBattery;   
-
+		CBatterySensor* m_seBattery;
 		/* Global Variables */
 		double 		m_fLeftSpeed;
 		double 		m_fRightSpeed;
 		double**	m_fActivationTable;
 		double 		m_fTime;
+		double m_NLIGHT;
 
 		int m_nWriteToFile;
 		/* Functions */
@@ -46,7 +46,7 @@ private:
 		
 		void SwitchLight( unsigned int un_priority );
 		void ObstacleAvoidance ( unsigned int un_priority );
-		void Navigate ( unsigned int un_priority );
+		//void Navigate ( unsigned int un_priority );
 		void GoLoad ( unsigned int un_priority );
 };
 
