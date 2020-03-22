@@ -13,13 +13,14 @@
 #include "contactsensor.h"
 #include "lightsensor.h"
 #include "bluelightsensor.h"
-
+#include "redlightsensor.h"
 #include "groundsensor.h"
 #include "groundmemorysensor.h"
-#include "batterysensor.h"
+#include "redbatterysensor.h"
 #include "reallightsensor.h"
 #include "realbluelightsensor.h"
 #include "realredlightsensor.h"
+
 /******************** Actuators ****************/
 #include "wheelsactuator.h"
 
@@ -72,12 +73,14 @@ CSubsumptionLightController::CSubsumptionLightController (const char* pch_name, 
 	m_seGround = (CGroundSensor*) m_pcEpuck->GetSensor (SENSOR_GROUND);
 	/* Set ground memory Sensor */
 	m_seGroundMemory = (CGroundMemorySensor*) m_pcEpuck->GetSensor (SENSOR_GROUND_MEMORY);
-	/* Set battery Sensor */
-	m_seBattery = (CBatterySensor*) m_pcEpuck->GetSensor (SENSOR_BATTERY);
+	/* Set red battery Sensor */
+	m_seRedBattery = (CRedBatterySensor*) m_pcEpuck->GetSensor (SENSOR_RED_BATTERY);
 	/* Set light Switch Sensor */
 	m_seLight = (CLightSensor*) m_pcEpuck->GetSensor(SENSOR_LIGHT);
-
-        m_seBlueLight =(CBlueLightSensor*) m_pcEpuck->GetSensor(SENSOR_REAL_BLUE_LIGHT);
+	/* Set blue light Switch Sensor */
+        m_seBlueLight =(CBlueLightSensor*) m_pcEpuck->GetSensor(SENSOR_BLUE_LIGHT);
+	/* Set red light sensor*/
+	m_seRedLight = (CRealRedLightSensor*) m_pcEpuck->GetSensor(SENSOR_REAL_RED_LIGHT);
 	
 	/* Initilize Variables */
 	m_fLeftSpeed = 0.0;
@@ -351,10 +354,10 @@ void CSubsumptionLightController::ObstacleAvoidance ( unsigned int un_priority )
 void CSubsumptionLightController::GoLoad ( unsigned int un_priority )
 {
 	/* Leer Battery Sensores */
-	double* battery = m_seBattery->GetSensorReading(m_pcEpuck);
+	double* battery = m_seRedBattery->GetSensorReading(m_pcEpuck);
 
 	/* Leer Sensores de Luz */
-	double* light = m_seLight->GetSensorReading(m_pcEpuck);
+	double* light = m_seRedLight->GetSensorReading(m_pcEpuck);
 
 
 	/* If battery below a BATTERY_THRESHOLD */

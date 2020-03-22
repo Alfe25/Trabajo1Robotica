@@ -6,6 +6,7 @@
 
 #include "controller.h"
 
+
 /******************************************************************************/
 /******************************************************************************/
 
@@ -30,8 +31,9 @@ private:
 		CContactSensor* m_seContact;
 		CGroundSensor* m_seGround;
 		CGroundMemorySensor* m_seGroundMemory;
-		CBatterySensor* m_seBattery;   
+		CRedBatterySensor* m_seRedBattery;   
 		CBlueLightSensor* m_seBlueLight;
+		CRealRedLightSensor* m_seRedLight;
 		
 		/* Global Variables */
 		double 		m_fLeftSpeed;
@@ -44,10 +46,8 @@ private:
 
 		void ExecuteBehaviors ( void );
 		void Coordinator ( void );
-		
 		void SwitchLight( unsigned int un_priority );
 		void ObstacleAvoidance ( unsigned int un_priority );
-		
 		void GoLoad ( unsigned int un_priority );
 };
 
