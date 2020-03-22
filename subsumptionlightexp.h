@@ -5,7 +5,7 @@
 /******************************************************************************/
 
 #include "experiment.h"
-
+#include "realbluelightsensor.h"
 /******************************************************************************/
 /******************************************************************************/
 
@@ -33,7 +33,9 @@ private:
 
 		/* Environment */
 		int m_nNumberOfLightObject;
+		int m_nNumberOfBlueLightObject;
 		dVector2 *m_pcvLightObjects;
+		dVector2 *m_pcvBlueLightObjects;
 		int m_nNumberOfGroundArea;
 		dVector2* m_vGroundAreaCenter;
 		double* m_fGroundAreaExternalRadius;
@@ -42,6 +44,7 @@ private:
 
 		/* Sensors */
 		float m_fLightSensorRange;
+		float m_fBlueLightSensorRange;
 		double m_fBatterySensorRange;
 		double m_fBatteryChargeCoef;
 		double m_fBatteryDischargeCoef;

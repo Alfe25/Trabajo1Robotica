@@ -12,11 +12,13 @@
 #include "epuckproximitysensor.h"
 #include "contactsensor.h"
 #include "lightsensor.h"
+#include "bluelightsensor.h"
+
 #include "groundsensor.h"
 #include "groundmemorysensor.h"
 #include "batterysensor.h"
 #include "reallightsensor.h"
-
+#include "realbluelightsensor.h"
 /******************** Actuators ****************/
 #include "wheelsactuator.h"
 
@@ -73,6 +75,8 @@ CSubsumptionLightController::CSubsumptionLightController (const char* pch_name, 
 	m_seBattery = (CBatterySensor*) m_pcEpuck->GetSensor (SENSOR_BATTERY);
 	/* Set light Switch Sensor */
 	m_seLight = (CLightSensor*) m_pcEpuck->GetSensor(SENSOR_LIGHT);
+
+        m_seBlueLight =(CBlueLightSensor*) m_pcEpuck->GetSensor(SENSOR_REAL_BLUE_LIGHT);
 	
 	/* Initilize Variables */
 	m_fLeftSpeed = 0.0;
@@ -126,7 +130,7 @@ void CSubsumptionLightController::SimulationStep(unsigned n_step_number, double 
 
 		/* Write robot wheels speed */
 		FILE* fileWheels = fopen("outputFiles/robotWheels", "a");
-		fprintf(fileWheels,"%2.4f %2.4f %2.4f %2.0f\n", m_fTime, m_fLeftSpeed, m_fRightSpeed,m_NLIGHT);
+		fprintf(fileWheels,"%2.4f %2.4f %2.4f %2.4f \n", m_fTime, m_fLeftSpeed, m_fRightSpeed, m_NLIGHT);
 		fclose(fileWheels);
 		/* END WRITE TO FILES */
 	}
@@ -174,7 +178,7 @@ void CSubsumptionLightController::Coordinator ( void )
 		// INIT: WRITE TO FILES 
 		// Write coordinator ouputs 
 		FILE* fileOutput = fopen("outputFiles/coordinatorOutput", "a");
-		fprintf(fileOutput,"%2.4f %d %2.4f %2.4f %2.0f \n", m_fTime, nBehavior, m_fLeftSpeed, m_fRightSpeed,m_NLIGHT);
+		fprintf(fileOutput,"%2.4f %d %2.4f %2.4f %2.4f \n", m_fTime, nBehavior, m_fLeftSpeed, m_fRightSpeed,m_NLIGHT);
 		fclose(fileOutput);
 		// END WRITE TO FILES 
 	}
@@ -203,7 +207,7 @@ void CSubsumptionLightController::SwitchLight( unsigned int un_priority ){
 		m_fActivationTable[un_priority][2] = 1.0;
 		m_fActivationTable[un_priority][0] = SPEED;
 		m_fActivationTable[un_priority][1] = SPEED;
-		m_NLIGHT=m_NLIGHT+1;
+		m_NLIGHT = m_NLIGHT +1;
 	}
 	//m_pcEpuck->SetAllColoredLeds(LED_COLOR_YELLOW);
 	/* GO Light */
@@ -278,8 +282,7 @@ void CSubsumptionLightController::ObstacleAvoidance ( unsigned int un_priority )
 	/* Normalize angle */
 	while ( fRepelent > M_PI ) fRepelent -= 2 * M_PI;
 	while ( fRepelent < -M_PI ) fRepelent += 2 * M_PI;
-
-
+	
 	/* If above a threshold */
 	if ( fMaxProx > PROXIMITY_THRESHOLD )
 	{
@@ -301,18 +304,15 @@ void CSubsumptionLightController::ObstacleAvoidance ( unsigned int un_priority )
 		m_fActivationTable[un_priority][1] = fVLinear + fC1 * fVAngular;
 		m_fActivationTable[un_priority][2] = 1.0;
 	}
-	//Problema, luz y obstáculo
+	/*Rodea la pared, problema para *luz se aleja por pared*/
 	if((prox[3] * prox[1] * prox[2])*(light[0]+light[1] +light[2]+light[3]+light[4] +light[5]+light[6]+light[7]) != 0){
 		m_fActivationTable[un_priority][2] = 1.0;
 		m_fActivationTable[un_priority][0] = SPEED;
-		m_fActivationTable[un_priority][1] = SPEED;
-	}
+		m_fActivationTable[un_priority][1] = SPEED;}
 	if((prox[5] * prox[6] * prox[7])*(light[0]+light[1] +light[2]+light[3]+light[4] +light[5]+light[6]+light[7]) != 0){
 		m_fActivationTable[un_priority][2] = 1.0;
 		m_fActivationTable[un_priority][0] = SPEED;
-		m_fActivationTable[un_priority][1] = SPEED;
-	}
-	
+		m_fActivationTable[un_priority][1] = SPEED;}
 	if (m_nWriteToFile ) 
 	{
 		/* INIT WRITE TO FILE */

@@ -20,9 +20,11 @@
 #include "contactsensor.h"
 #include "epuckproximitysensor.h"
 #include "lightsensor.h"
+#include "bluelightsensor.h"
 #include "groundsensor.h"
 #include "groundmemorysensor.h"
 #include "batterysensor.h"
+#include "realbluelightsensor.h"
 
 /******************** Actuators ****************/
 #include "wheelsactuator.h"
@@ -86,11 +88,13 @@ CSubsumptionLightExp::CSubsumptionLightExp(const char* pch_name, const char* par
 		}
 	
 		m_fLightSensorRange = 0.8; // meters
-
-		m_nNumberOfLightObject = 5;
-
+		m_fBlueLightSensorRange = 0.8;
+		m_nNumberOfLightObject = 8;
+		m_nNumberOfBlueLightObject = 3;
 		m_pcvLightObjects = new dVector2[m_nNumberOfLightObject];
-		
+
+		m_pcvBlueLightObjects = new dVector2[m_nNumberOfBlueLightObject];
+
 		m_pcvLightObjects[0].x = 0.5;
 		m_pcvLightObjects[0].y = -0.75;
 		m_pcvLightObjects[1].x = -0.5;
@@ -101,6 +105,16 @@ CSubsumptionLightExp::CSubsumptionLightExp(const char* pch_name, const char* par
 		m_pcvLightObjects[3].y = 0.5;
 		m_pcvLightObjects[4].x = 0.90;
 		m_pcvLightObjects[4].y = 0.0;
+		//AZULES
+		m_pcvLightObjects[5].x   = 0.1;
+		m_pcvLightObjects[5].y = 0.2;
+
+		m_pcvLightObjects[6].x   = 0.4;
+		m_pcvLightObjects[6].y = 0.6;
+
+		m_pcvLightObjects[7].x   = 0.9;
+		m_pcvLightObjects[7].y = -0.3;		
+
 
 		m_nNumberOfGroundArea = 0;
 		m_vGroundAreaCenter = new dVector2[m_nNumberOfGroundArea];
@@ -143,15 +157,27 @@ CSubsumptionLightExp::CSubsumptionLightExp(const char* pch_name, const char* par
 		/* Lights */
 		/* Get Light Objects Number */
 		m_nNumberOfLightObject = getInt('=',pfile);
+  		m_nNumberOfBlueLightObject = getInt('=',pfile);
 		/* Create Objects */
 		m_pcvLightObjects = new dVector2[m_nNumberOfLightObject];
+		
 		for ( int i = 0 ; i < m_nNumberOfLightObject; i++){
 			/* Get X position */
 			m_pcvLightObjects[i].x = getDouble('=',pfile);
+			
 			/* Get Y Position */
 			m_pcvLightObjects[i].y = getDouble('=',pfile);
+			
 		}
 
+
+		/*m_pcvBlueLightObjects = new dVector2[m_nNumberOfBlueLightObject];
+		for ( int i = 0 ; i < m_nNumberOfBlueLightObject; i++){
+
+		m_pcvBlueLightObjects[i].x = getDouble('=',pfile);
+		m_pcvBlueLightObjects[i].y = getDouble('=',pfile);
+
+		}*/
 		/* Ground Areas */
 		/* Get GroundArea Objects */
 		m_nNumberOfGroundArea = getInt('=',pfile);
@@ -175,7 +201,8 @@ CSubsumptionLightExp::CSubsumptionLightExp(const char* pch_name, const char* par
 		/* Get Light Range */
 
 		m_fLightSensorRange = getDouble('=',pfile); 
-		
+
+		m_fBlueLightSensorRange = getDouble('=',pfile); 
 		/* Get Battery load range */
 		m_fBatterySensorRange = getDouble('=',pfile);
 		/* Get batttery charge coef */
@@ -211,12 +238,33 @@ CArena* CSubsumptionLightExp::CreateArena()
 	/* Create and add Light Object */
 	char pchTemp[128];
 	CLightObject* pcLightObject = NULL;
+	CBlueLightObject* pcBlueLightObject = NULL;
 	for( int i = 0 ; i < m_nNumberOfLightObject ; i++){
-		sprintf(pchTemp, "LightObject%d", i);
+		if( i <5 ){sprintf(pchTemp, "LightObject%d", i);
 		CLightObject* pcLightObject = new CLightObject (pchTemp);
 		pcLightObject->SetCenter(m_pcvLightObjects[i]);
-		pcArena->AddLightObject(pcLightObject);
+		pcArena->AddLightObject(pcLightObject);}
+		if(i >= 5){
+
+		sprintf(pchTemp, "BlueLightObject%d", i);
+		CBlueLightObject* pcBlueLightObject = new CBlueLightObject (pchTemp);
+		pcBlueLightObject->SetCenter(m_pcvLightObjects[i]);
+		pcArena->AddBlueLightObject(pcBlueLightObject);
 	}
+
+
+	}
+	
+	/*CBlueLightObject* pcBlueLightObject = NULL;
+	for( int i = 0 ; i < m_nNumberOfBlueLightObject ; i++){
+		
+	}*/
+	
+	
+
+
+
+
 
 	/* Create GroundArea */
 	char sGroundAreaName[100]="epuck";
@@ -286,6 +334,10 @@ void CSubsumptionLightExp::AddSensors(CEpuck* pc_epuck)
 	CSensor* pcBatterySensor = NULL;
 	pcBatterySensor = new CBatterySensor("Battery Sensor", m_fBatterySensorRange, m_fBatteryChargeCoef, m_fBatteryDischargeCoef);
 	pc_epuck->AddSensor(pcBatterySensor);
+	/* Create and add Light Sensor */
+	CSensor* pcBlueLightSensor = NULL;
+	pcBlueLightSensor = new CBlueLightSensor("Blue Light Sensor", m_fLightSensorRange);
+	pc_epuck->AddSensor(pcBlueLightSensor);
 }
 
 /******************************************************************************/
@@ -299,6 +351,7 @@ void CSubsumptionLightExp::SetController(CEpuck* pc_epuck)
 	pc_epuck->SetControllerType( CONTROLLER_SUBSUMPTION_LIGHT );
 	pc_epuck->SetController(pcController);
 
+	
 }
 
 /******************************************************************************/
