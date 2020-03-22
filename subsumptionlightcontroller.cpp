@@ -19,6 +19,7 @@
 #include "batterysensor.h"
 #include "reallightsensor.h"
 #include "realbluelightsensor.h"
+#include "realredlightsensor.h"
 /******************** Actuators ****************/
 #include "wheelsactuator.h"
 

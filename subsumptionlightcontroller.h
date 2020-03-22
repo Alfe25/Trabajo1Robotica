@@ -32,6 +32,7 @@ private:
 		CGroundMemorySensor* m_seGroundMemory;
 		CBatterySensor* m_seBattery;   
 		CBlueLightSensor* m_seBlueLight;
+		
 		/* Global Variables */
 		double 		m_fLeftSpeed;
 		double 		m_fRightSpeed;
