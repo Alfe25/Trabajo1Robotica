@@ -83,7 +83,7 @@ CSubsumptionLightExp::CSubsumptionLightExp(const char* pch_name, const char* par
 		m_fRobotOrientations = new double[m_nRobotsNumber];
 		for ( int i = 0 ; i < m_nRobotsNumber ; i++)
 		{
-			m_pcvRobotPositions[i].x 	= 0.9;
+			m_pcvRobotPositions[i].x 	= 0.5;
 			m_pcvRobotPositions[i].y 	= -0.9;
 			m_fRobotOrientations[i] 	= 0.0;
 		}
@@ -101,10 +101,10 @@ CSubsumptionLightExp::CSubsumptionLightExp(const char* pch_name, const char* par
 		m_pcvLightObjects = new dVector2[m_nNumberOfLightObject];
 
 
-		m_pcvLightObjects[0].x = 0.5;
-		m_pcvLightObjects[0].y = -0.75;
-		m_pcvLightObjects[1].x = -0.5;
-		m_pcvLightObjects[1].y = -0.5;
+		m_pcvLightObjects[0].x = 0.0;
+		m_pcvLightObjects[0].y = -1.1;
+		m_pcvLightObjects[1].x = -0.95;
+		m_pcvLightObjects[1].y = -0.2;
 		m_pcvLightObjects[2].x = -0.5;
 		m_pcvLightObjects[2].y = 0.5;
 		m_pcvLightObjects[3].x = 0.25;
@@ -117,17 +117,31 @@ CSubsumptionLightExp::CSubsumptionLightExp(const char* pch_name, const char* par
 		m_pcvLightObjects[5].y = 0.95;
 
 		m_pcvLightObjects[6].x = -0.95;
-		m_pcvLightObjects[6].y = -0.95;
+		m_pcvLightObjects[6].y = -0.0;
 
 		//Rojo
-		m_pcvLightObjects[7].x = -0.95;
+		m_pcvLightObjects[7].x = -0.95;  
 		m_pcvLightObjects[7].y = 0.95;	
 
-		m_nNumberOfGroundArea = 0;
+		m_nNumberOfGroundArea = 2;
 		m_vGroundAreaCenter = new dVector2[m_nNumberOfGroundArea];
+		m_vGroundAreaCenter[0].x = 0.9;
+		m_vGroundAreaCenter[0].y = -0.9;
+		m_vGroundAreaCenter[1].x = -0.9;
+		m_vGroundAreaCenter[1].y = 0.85;
+
 		m_fGroundAreaExternalRadius = new double[m_nNumberOfGroundArea];
+		m_fGroundAreaExternalRadius[0]=0.5;
+		m_fGroundAreaExternalRadius[1]=0.5;
+
 		m_fGroundAreaInternalRadius = new double[m_nNumberOfGroundArea];
+		m_fGroundAreaInternalRadius[0]=1;
+		m_fGroundAreaInternalRadius[1]=1;
+
 		m_fGroundAreaColor = new double[m_nNumberOfGroundArea];
+		m_fGroundAreaColor[0]=(0.0);
+		m_fGroundAreaColor[1]=(0.5);
+		
 	}
 	/* Else, extract info from the file */
 	else

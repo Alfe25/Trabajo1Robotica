@@ -1,0 +1,54 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%% EXTRA %%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+NUMBER OF ROBOTS							= 1	
+ROBOT 1: X POSITION (meters)		= 0.5
+ROBOT 1: Y POSITION (meters)		= -0.9
+ROBOT 1: ORIENTATION (radians) 	= 0.0
+WRITE TO FILE (0 No, 1 YES )	= 1
+RUN TIME													= 10000
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%% ENVIRONMENT %%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+NUMBER OF LIGHT OBJECTS  	= 8
+LIGHT 1 X POSITION (meters) 	= 0.0
+LIGHT 1 Y POSITION (meters)	= -1.1
+LIGHT 2 X POSITION (meters) 	= -0.95
+LIGHT 2 Y POSITION (meters)	= -0.2
+LIGHT 3 X POSITION (meters) 	= -0.5
+LIGHT 3 Y POSITION (meters)	= 0.5
+LIGHT 4 X POSITION (meters) 	= 0.25
+LIGHT 4 Y POSITION (meters)	= 0.5
+LIGHT 5 X POSITION (meters) 	= 0.9
+LIGHT 5 Y POSITION (meters)	= 0.0
+BLUE LIGHT 6 X POSITION (meters) 	= 0.95
+BLUE LIGHT 6 Y POSITION (meters)	= 0.95
+BLUE LIGHT 7 X POSITION (meters) 	= -0.95
+BLUE LIGHT 7 Y POSITION (meters)	= 0.0
+RED LIGHT 8 X POSITION (meters) 	= -0.95
+RED LIGHT 8 Y POSITION (meters)	= 0.95
+
+NUMBER OF GROUND AREA		= 2
+GROUND AREA 1 X POSITION	(meters)	= 0.85
+GROUND AREA 1 Y POSITION	(meters)	= -0.85
+GROUND AREA 1 RADIUS	(meters)	= 0.7
+GROUND AREA 1 COLOR (0.0 Black, 0.5 Grey)	= 0.0
+GROUND AREA 2 X POSITIO(meters)		= -0.9
+GROUND AREA 2 Y POSITION(meters)	= 0.85
+GROUND AREA 2 RADIUS	(meters) = 0.5
+GROUND AREA 2 COLOR (0.0 Black, 0.5 Grey) = 0.5
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%% SENSORS %%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+LIGHT SENSOR RANGE (meters)	= 0.8
+RED LIGHT SENSOR RANGE (meters)	= 3
+BLUE LIGHT SENSOR RANGE (meters)= 0.8
+BATTERY SENSOR RANGE (meters)	= 0.5
+BATTERY CHARGE COEF 		= 0.01
+BATTERY DISCHARGE COEF		= 0.0005
+

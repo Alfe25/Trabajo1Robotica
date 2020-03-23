@@ -36,23 +36,28 @@ private:
 		CRealRedLightSensor* m_seRedLight;
 		
 		/* Global Variables */
-		double 		m_fLeftSpeed;
-		double 		m_fRightSpeed;
-		double**	m_fActivationTable;
-		double 		m_fTime;
-		double		m_NLIGHT;
-		double fBattToForageInhibitor;
+		double 	m_fLeftSpeed;
+		double 	m_fRightSpeed;
+		double** m_fActivationTable;
+		double 	m_fTime;
+		double	m_NLight;
+		double	m_NBlueLight;
+		double fBattInhibitor;
 		double totalBlueLight;
 		double totalLight;
 		double TOTBlueLight;
 		double TOTLight;
+
+		double memory;
 		int m_nWriteToFile;
+
 		/* Functions */
 
 		void ExecuteBehaviors ( void );
 		void Coordinator ( void );
 		void SwitchLight( unsigned int un_priority );
 		void SwitchBlueLight( unsigned int un_priority );
+		void Forage ( unsigned int un_priority );
 		void ObstacleAvoidance ( unsigned int un_priority );
 		void GoLoad ( unsigned int un_priority );
 		void Navigate ( unsigned int un_priority );

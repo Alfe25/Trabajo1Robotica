@@ -40,19 +40,20 @@ using namespace std;
 /******************************************************************************/
 /******************************************************************************/
 
-#define BEHAVIORS 5
+#define BEHAVIORS 6
 
 #define AVOID_PRIORITY 0
 #define RELOAD_PRIORITY 1
-#define LED_PRIORITY 2
+#define FORAGE_PRIORITY	4
 #define BLUE_LED_PRIORITY 3
-#define NAVIGATE_PRIORITY 4
+#define LED_PRIORITY 2
+#define NAVIGATE_PRIORITY 5
 
 
 #define PROXIMITY_THRESHOLD 0.6
 #define BATTERY_THRESHOLD 0.5
 
-#define SPEED 500.0
+#define SPEED 1000.0
 
 
 /******************************************************************************/
@@ -83,12 +84,12 @@ CSubsumptionLightController::CSubsumptionLightController (const char* pch_name, 
 	/* Set red light sensor*/
 	m_seRedLight = (CRealRedLightSensor*) m_pcEpuck->GetSensor(SENSOR_REAL_RED_LIGHT);
 
-	//CBLueLightSensor* m_seLight = (CBlueLightSensor*) m_pcEpuck->GetSensor(SENSOR_BLUE_LIGHT);
-	
 	/* Initilize Variables */
 	m_fLeftSpeed = 0.0;
 	m_fRightSpeed = 0.0;
-	m_NLIGHT = 0.0;
+	m_NLight = 0.0;
+	m_NBlueLight = 0.0;
+	memory=0.0;
 
 	/* Create TABLE for the COORDINATOR */
 	m_fActivationTable = new double* [BEHAVIORS];
@@ -114,7 +115,7 @@ CSubsumptionLightController::~CSubsumptionLightController()
 
 void CSubsumptionLightController::SimulationStep(unsigned n_step_number, double f_time, double f_step_interval)
 {
-
+	
 	/* Move time to global variable, so it can be used by the bahaviors to write to files*/
 	m_fTime = f_time;
 
@@ -137,7 +138,7 @@ void CSubsumptionLightController::SimulationStep(unsigned n_step_number, double 
 
 		/* Write robot wheels speed */
 		FILE* fileWheels = fopen("outputFiles/robotWheels", "a");
-		fprintf(fileWheels,"%2.4f %2.4f %2.4f %2.4f \n", m_fTime, m_fLeftSpeed, m_fRightSpeed, m_NLIGHT);
+		fprintf(fileWheels,"%2.4f %2.4f %2.4f %2.4f %2.4f\n", m_fTime, m_fLeftSpeed, m_fRightSpeed, m_NLight, m_NBlueLight);
 		fclose(fileWheels);
 		/* END WRITE TO FILES */
 	}
@@ -153,13 +154,14 @@ void CSubsumptionLightController::ExecuteBehaviors ( void )
 		m_fActivationTable[i][2] = 0.0;
 	}
 	/* Release Inhibitors */
-	fBattToForageInhibitor = 1.0;
+	fBattInhibitor = 1.0;
 	/* Set Leds to BLACK */
 	m_pcEpuck->SetAllColoredLeds(LED_COLOR_BLACK);
 	ObstacleAvoidance ( AVOID_PRIORITY );
   	GoLoad ( RELOAD_PRIORITY );
 	SwitchLight(LED_PRIORITY);
 	SwitchBlueLight(BLUE_LED_PRIORITY);
+	Forage( FORAGE_PRIORITY );	
 	Navigate ( NAVIGATE_PRIORITY );
 }
 
@@ -180,7 +182,7 @@ void CSubsumptionLightController::Coordinator ( void )
 	m_fLeftSpeed = m_fActivationTable[nBehavior][0];
 	m_fRightSpeed = m_fActivationTable[nBehavior][1];
 	
-  printf("%d %2.4f %2.4f %2.0f \n", nBehavior, m_fLeftSpeed, m_fRightSpeed,m_NLIGHT);
+  printf("%d %2.4f %2.4f %1.1f %1.0f %1.0f %1.1f \n", nBehavior, m_fLeftSpeed, m_fRightSpeed,fBattInhibitor, m_NLight,m_NBlueLight, memory );
 	printf("\n");	
 
   if (m_nWriteToFile ) 
@@ -188,7 +190,7 @@ void CSubsumptionLightController::Coordinator ( void )
 		// INIT: WRITE TO FILES 
 		// Write coordinator ouputs 
 		FILE* fileOutput = fopen("outputFiles/coordinatorOutput", "a");
-		fprintf(fileOutput,"%2.4f %d %2.4f %2.4f %2.4f \n", m_fTime, nBehavior, m_fLeftSpeed, m_fRightSpeed,m_NLIGHT);
+		fprintf(fileOutput,"%2.4f %d %2.4f %2.4f %2.4f %2.4f \n", m_fTime, nBehavior, m_fLeftSpeed, m_fRightSpeed,m_NLight,m_NBlueLight);
 		fclose(fileOutput);
 		// END WRITE TO FILES 
 	}
@@ -196,19 +198,23 @@ void CSubsumptionLightController::Coordinator ( void )
 
 /******************************************************************************/
 /******************************************************************************/
-void CSubsumptionLightController::SwitchBlueLight( unsigned int un_priority ){
 
+void CSubsumptionLightController::SwitchBlueLight( unsigned int un_priority ){
+	
+	double* groundMemory = m_seGroundMemory->GetSensorReading(m_pcEpuck);
 	double* bluelight = m_seBlueLight->GetSensorReading(m_pcEpuck);
 	totalBlueLight = 0;
 	TOTBlueLight = 0;
 	totalBlueLight = bluelight[0]+bluelight[7];
 	TOTBlueLight = bluelight[0]+bluelight[1]+bluelight[2]+bluelight[3]+bluelight[4]+bluelight[5]+bluelight[6]+bluelight[7];
+	memory=groundMemory[0];
 	
-	if (fBattToForageInhibitor == 1.0 && m_NLIGHT==5 ){
+	if (fBattInhibitor == 1.0 && m_NLight==5 ){
 			//m_pcEpuck->SetAllColoredLeds(LED_COLOR_YELLOW);
 			if ( totalBlueLight >= 0.8)
 			{
 				m_seBlueLight->SwitchNearestLight(0);
+				m_NBlueLight=m_NBlueLight+1;
 				m_pcEpuck->SetAllColoredLeds(LED_COLOR_GREEN);
 				m_fActivationTable[un_priority][2] = 1.0;
 				m_fActivationTable[un_priority][0] = SPEED;
@@ -263,15 +269,16 @@ void CSubsumptionLightController::SwitchBlueLight( unsigned int un_priority ){
 void CSubsumptionLightController::SwitchLight( unsigned int un_priority ){
 
 	double* light = m_seLight->GetSensorReading(m_pcEpuck);
+	double* groundMemory = m_seGroundMemory->GetSensorReading(m_pcEpuck);
 
 	totalLight = 0;
 	TOTLight = 0;
 	
   	totalLight = light[0]+light[7];
 	TOTLight = light[0]+light[1]+light[2]+light[3]+light[4]+light[5]+light[6]+light[7];
+	memory=groundMemory[0];
 
-
-	if (fBattToForageInhibitor == 1.0 ){
+	if (fBattInhibitor == 1.0 ){
 
 			if ( totalLight >= 0.8)
 			{
@@ -280,7 +287,7 @@ void CSubsumptionLightController::SwitchLight( unsigned int un_priority ){
 				m_fActivationTable[un_priority][0] = SPEED;
 				m_fActivationTable[un_priority][1] = SPEED;
 				m_fActivationTable[un_priority][2] = 1.0;
-				m_NLIGHT = m_NLIGHT +1;
+				m_NLight = m_NLight +1;
 			}
 			//m_pcEpuck->SetAllColoredLeds(LED_COLOR_YELLOW);
 			/* GO Light */
@@ -313,17 +320,18 @@ void CSubsumptionLightController::SwitchLight( unsigned int un_priority ){
 				m_fActivationTable[un_priority][2] = 1.0;
 				m_fActivationTable[un_priority][0] = SPEED;
 				m_fActivationTable[un_priority][1] = SPEED;
-			}
-				
+			}			
 		
 	}
+	/* INIT WRITE TO FILE */
+
 }
 
 
 
 void CSubsumptionLightController::ObstacleAvoidance ( unsigned int un_priority )
 {
-	
+	double* groundMemory = m_seGroundMemory->GetSensorReading(m_pcEpuck);
 	/* Leer Sensores de Proximidad */
 	double* prox = m_seProx->GetSensorReading(m_pcEpuck);
 
@@ -334,7 +342,7 @@ void CSubsumptionLightController::ObstacleAvoidance ( unsigned int un_priority )
 	dVector2 vRepelent;
 	vRepelent.x = 0.0;
 	vRepelent.y = 0.0;
-
+	memory=groundMemory[0];
 	/* Calc vector Sum */
 	for ( int i = 0 ; i < m_seProx->GetNumberOfInputs() ; i ++ )
 	{
@@ -392,22 +400,15 @@ void CSubsumptionLightController::ObstacleAvoidance ( unsigned int un_priority )
 
 void CSubsumptionLightController::Navigate ( unsigned int un_priority )
 {	
-	double* light = m_seLight->GetSensorReading(m_pcEpuck);
-	double* bluelight = m_seBlueLight->GetSensorReading(m_pcEpuck);
-
-	TOTLight = light[0]+light[1]+light[2]+light[3]+light[4]+light[5]+light[6]+light[7];
-	TOTBlueLight = bluelight[0]+bluelight[1]+bluelight[2]+bluelight[3]+bluelight[4]+bluelight[5]+bluelight[6]+bluelight[7];
-	if (fBattToForageInhibitor == 1.0 ){	
-		if(TOTLight == 0 && TOTBlueLight == 0){
-			m_fActivationTable[un_priority][0] = SPEED;
-			m_fActivationTable[un_priority][1] = SPEED;
-		}
-
-	}else{
+	double* groundMemory = m_seGroundMemory->GetSensorReading(m_pcEpuck);
+	memory=groundMemory[0];
+	if (fBattInhibitor == 1.0){	
 		m_fActivationTable[un_priority][0] = SPEED;
 		m_fActivationTable[un_priority][1] = SPEED;
+		
 	}	
 	m_fActivationTable[un_priority][2] = 1.0;
+
 	
 	if (m_nWriteToFile ) 
 	{
@@ -418,6 +419,7 @@ void CSubsumptionLightController::Navigate ( unsigned int un_priority )
 		fclose(fileOutput);
 		// END WRITE TO FILES 
 	}
+	
 }
 		
 /******************************************************************************/
@@ -425,6 +427,7 @@ void CSubsumptionLightController::Navigate ( unsigned int un_priority )
 
 void CSubsumptionLightController::GoLoad ( unsigned int un_priority )
 {
+	double* groundMemory = m_seGroundMemory->GetSensorReading(m_pcEpuck);
 	/* Leer Battery Sensores */
 	double* battery = m_seRedBattery->GetSensorReading(m_pcEpuck);
 
@@ -434,12 +437,12 @@ void CSubsumptionLightController::GoLoad ( unsigned int un_priority )
 	/* Calc light intensity at the left and right */
 	double lightLeft 	= light[0] + light[1] + light[2] + light[3];
 	double lightRight = light[4] + light[5] + light[6] + light[7];
-
+	memory=groundMemory[0];
 	/* If battery below a BATTERY_THRESHOLD */
 	if ( battery[0] < BATTERY_THRESHOLD ){
 		/* Set Leds to RED */
 		m_pcEpuck->SetAllColoredLeds(LED_COLOR_RED);
-		fBattToForageInhibitor = 0.0;
+		fBattInhibitor = 0.0;
 		/* If not pointing to the light */
 		if ( light[0] * light[7] == 0.0 )
 		{
@@ -463,7 +466,7 @@ void CSubsumptionLightController::GoLoad ( unsigned int un_priority )
 			m_fActivationTable[un_priority][1] = SPEED;
 		}
 	}else{
-		fBattToForageInhibitor = 1.0;	
+		fBattInhibitor = 1.0;	
 	}	
 
 	if (m_nWriteToFile ){
@@ -474,5 +477,25 @@ void CSubsumptionLightController::GoLoad ( unsigned int un_priority )
 		fclose(fileOutput);
 		/* END WRITE TO FILE */
 	}
+}
+
+
+void CSubsumptionLightController::Forage ( unsigned int un_priority )
+{
+	/* Leer Sensores de Suelo Memory */
+	double* groundMemory = m_seGroundMemory->GetSensorReading(m_pcEpuck);
+	
+	/* If with a virtual puck */
+	if(m_NBlueLight==2 && fBattInhibitor==1.0){
+		if ( memory == 1.0 ){
+			/* Set Leds to BLUE */
+			m_pcEpuck->SetAllColoredLeds(LED_COLOR_BLUE);	
+			m_fActivationTable[un_priority][0] = SPEED;
+			m_fActivationTable[un_priority][1] = SPEED;			
+			m_fActivationTable[un_priority][2] = 1.0;					
+		}
+		
+	}
+	//FILE
 }
 
