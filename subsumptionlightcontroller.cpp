@@ -40,12 +40,13 @@ using namespace std;
 /******************************************************************************/
 /******************************************************************************/
 
-#define BEHAVIORS 4
+#define BEHAVIORS 5
 
 #define AVOID_PRIORITY 0
 #define RELOAD_PRIORITY 1
 #define LED_PRIORITY 2
-#define NAVIGATE_PRIORITY 3
+#define BLUE_LED_PRIORITY 3
+#define NAVIGATE_PRIORITY 4
 
 
 #define PROXIMITY_THRESHOLD 0.6
@@ -158,6 +159,7 @@ void CSubsumptionLightController::ExecuteBehaviors ( void )
 	ObstacleAvoidance ( AVOID_PRIORITY );
   	GoLoad ( RELOAD_PRIORITY );
 	SwitchLight(LED_PRIORITY);
+	SwitchBlueLight(BLUE_LED_PRIORITY);
 	Navigate ( NAVIGATE_PRIORITY );
 }
 
@@ -194,27 +196,15 @@ void CSubsumptionLightController::Coordinator ( void )
 
 /******************************************************************************/
 /******************************************************************************/
+void CSubsumptionLightController::SwitchBlueLight( unsigned int un_priority ){
 
-/**FUNCION AÑADIDA**/
-void CSubsumptionLightController::SwitchLight( unsigned int un_priority ){
-
-	double* light = m_seLight->GetSensorReading(m_pcEpuck);
-	double* prox = m_seProx->GetSensorReading(m_pcEpuck);
 	double* bluelight = m_seBlueLight->GetSensorReading(m_pcEpuck);
-
-	totalLight = 0;
-	TOTLight = 0;
 	totalBlueLight = 0;
 	TOTBlueLight = 0;
-  
-  	totalLight = light[0]+light[7];
-	TOTLight = light[0]+light[1]+light[2]+light[3]+light[4]+light[5]+light[6]+light[7];
-
 	totalBlueLight = bluelight[0]+bluelight[7];
 	TOTBlueLight = bluelight[0]+bluelight[1]+bluelight[2]+bluelight[3]+bluelight[4]+bluelight[5]+bluelight[6]+bluelight[7];
-
-	if (fBattToForageInhibitor == 1.0 ){
-		if(m_NLIGHT==5){
+	
+	if (fBattToForageInhibitor == 1.0 && m_NLIGHT==5 ){
 			//m_pcEpuck->SetAllColoredLeds(LED_COLOR_YELLOW);
 			if ( totalBlueLight >= 0.8)
 			{
@@ -230,8 +220,8 @@ void CSubsumptionLightController::SwitchLight( unsigned int un_priority ){
 			{
 				
 				/* Calc light intensity at the left and right */
-				double bluelightLeft 	= bluelight[0] + bluelight[1] + bluelight[2] + bluelight[3]; //sensores por la izquierda
-				double bluelightRight = bluelight[4] + bluelight[5] + bluelight[6] + bluelight[7]; // sensores por la derecha
+				double bluelightLeft = bluelight[0] + bluelight[1] + bluelight[2] + bluelight[3]; //sensores por la izquierda
+				double bluelightRight= bluelight[4] + bluelight[5] + bluelight[6] + bluelight[7]; // sensores por la derecha
 
 				/* If light on the left */
 				if ( bluelightLeft > bluelightRight )
@@ -259,14 +249,30 @@ void CSubsumptionLightController::SwitchLight( unsigned int un_priority ){
 					m_fActivationTable[un_priority][0] = SPEED;
 					m_fActivationTable[un_priority][1] = SPEED;
 				}
+			}
 				
-			}if((bluelight[0] * bluelight[7] != 0.0) && (TOTBlueLight != 0)){
+			if((bluelight[0] * bluelight[7] != 0.0) && (TOTBlueLight != 0)){
 				m_fActivationTable[un_priority][2] = 1.0;
 				m_fActivationTable[un_priority][0] = SPEED;
 				m_fActivationTable[un_priority][1] = SPEED;
 			}
+		
+	}
+}
+/**FUNCION AÑADIDA**/
+void CSubsumptionLightController::SwitchLight( unsigned int un_priority ){
 
-		}else{
+	double* light = m_seLight->GetSensorReading(m_pcEpuck);
+
+	totalLight = 0;
+	TOTLight = 0;
+	
+  	totalLight = light[0]+light[7];
+	TOTLight = light[0]+light[1]+light[2]+light[3]+light[4]+light[5]+light[6]+light[7];
+
+
+	if (fBattToForageInhibitor == 1.0 ){
+
 			if ( totalLight >= 0.8)
 			{
 				m_seLight->SwitchNearestLight(0);
@@ -302,13 +308,14 @@ void CSubsumptionLightController::SwitchLight( unsigned int un_priority ){
 					m_fActivationTable[un_priority][0] = SPEED;
 					m_fActivationTable[un_priority][1] = -SPEED;
 				}
-			}if((light[0] * light[7] != 0.0) && (TOTLight != 0)){
+			}
+			if((light[0] * light[7] != 0.0) && (TOTLight != 0)){
 				m_fActivationTable[un_priority][2] = 1.0;
 				m_fActivationTable[un_priority][0] = SPEED;
 				m_fActivationTable[un_priority][1] = SPEED;
 			}
 				
-		}
+		
 	}
 }
 

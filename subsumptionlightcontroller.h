@@ -52,6 +52,7 @@ private:
 		void ExecuteBehaviors ( void );
 		void Coordinator ( void );
 		void SwitchLight( unsigned int un_priority );
+		void SwitchBlueLight( unsigned int un_priority );
 		void ObstacleAvoidance ( unsigned int un_priority );
 		void GoLoad ( unsigned int un_priority );
 		void Navigate ( unsigned int un_priority );
