@@ -40,11 +40,12 @@ using namespace std;
 /******************************************************************************/
 /******************************************************************************/
 
-#define BEHAVIORS 3
+#define BEHAVIORS 4
 
 #define AVOID_PRIORITY 0
 #define RELOAD_PRIORITY 1
 #define LED_PRIORITY 2
+#define NAVIGATE_PRIORITY 3
 
 
 #define PROXIMITY_THRESHOLD 0.6
@@ -150,12 +151,14 @@ void CSubsumptionLightController::ExecuteBehaviors ( void )
 	{
 		m_fActivationTable[i][2] = 0.0;
 	}
+	/* Release Inhibitors */
+	fBattToForageInhibitor = 1.0;
 	/* Set Leds to BLACK */
 	m_pcEpuck->SetAllColoredLeds(LED_COLOR_BLACK);
 	ObstacleAvoidance ( AVOID_PRIORITY );
   	GoLoad ( RELOAD_PRIORITY );
 	SwitchLight(LED_PRIORITY);
-	//Navigate ( NAVIGATE_PRIORITY );
+	Navigate ( NAVIGATE_PRIORITY );
 }
 
 /******************************************************************************/
@@ -199,10 +202,10 @@ void CSubsumptionLightController::SwitchLight( unsigned int un_priority ){
 	double* prox = m_seProx->GetSensorReading(m_pcEpuck);
 	double* bluelight = m_seBlueLight->GetSensorReading(m_pcEpuck);
 
-	double totalLight = 0;
-	double TOTLight = 0;
-	double totalBlueLight = 0;
-	double TOTBlueLight = 0;
+	totalLight = 0;
+	TOTLight = 0;
+	totalBlueLight = 0;
+	TOTBlueLight = 0;
   
   	totalLight = light[0]+light[7];
 	TOTLight = light[0]+light[1]+light[2]+light[3]+light[4]+light[5]+light[6]+light[7];
@@ -210,102 +213,101 @@ void CSubsumptionLightController::SwitchLight( unsigned int un_priority ){
 	totalBlueLight = bluelight[0]+bluelight[7];
 	TOTBlueLight = bluelight[0]+bluelight[1]+bluelight[2]+bluelight[3]+bluelight[4]+bluelight[5]+bluelight[6]+bluelight[7];
 
-	if(m_NLIGHT==5){
-		//m_pcEpuck->SetAllColoredLeds(LED_COLOR_YELLOW);
-		if ( totalBlueLight >= 0.8)
-		{
-			m_seBlueLight->SwitchNearestLight(0);
-			m_pcEpuck->SetAllColoredLeds(LED_COLOR_GREEN);
-			m_fActivationTable[un_priority][2] = 1.0;
-			m_fActivationTable[un_priority][0] = SPEED;
-			m_fActivationTable[un_priority][1] = SPEED;
-		}
-		//m_pcEpuck->SetAllColoredLeds(LED_COLOR_YELLOW);
-		/* GO Light */
-		if ( (bluelight[0] * bluelight[7] == 0.0) && (TOTBlueLight != 0))
-		{
-			
-			/* Calc light intensity at the left and right */
-			double bluelightLeft 	= bluelight[0] + bluelight[1] + bluelight[2] + bluelight[3]; //sensores por la izquierda
-			double bluelightRight = bluelight[4] + bluelight[5] + bluelight[6] + bluelight[7]; // sensores por la derecha
-
-			/* If light on the left */
-			if ( bluelightLeft > bluelightRight )
+	if (fBattToForageInhibitor == 1.0 ){
+		if(m_NLIGHT==5){
+			//m_pcEpuck->SetAllColoredLeds(LED_COLOR_YELLOW);
+			if ( totalBlueLight >= 0.8)
 			{
-				//if(){
-					
-				//}
-				/* Turn left */
-				//m_acWheels->SetSpeed(-500,500); 	// gira a la izquierda
-				m_fActivationTable[un_priority][2] = 1.0;
-				m_fActivationTable[un_priority][0] = -SPEED;
-				m_fActivationTable[un_priority][1] = SPEED;
-				
-			}
-			else
-			{
-				/* Turn right */
-				//m_acWheels->SetSpeed(500,-500);		// gira a la derecha
+				m_seBlueLight->SwitchNearestLight(0);
+				m_pcEpuck->SetAllColoredLeds(LED_COLOR_GREEN);
 				m_fActivationTable[un_priority][2] = 1.0;
 				m_fActivationTable[un_priority][0] = SPEED;
-				m_fActivationTable[un_priority][1] = -SPEED;
+				m_fActivationTable[un_priority][1] = SPEED;
 			}
-			
+			//m_pcEpuck->SetAllColoredLeds(LED_COLOR_YELLOW);
+			/* GO Light */
+			if ( (bluelight[0] * bluelight[7] == 0.0) && (TOTBlueLight != 0))
+			{
+				
+				/* Calc light intensity at the left and right */
+				double bluelightLeft 	= bluelight[0] + bluelight[1] + bluelight[2] + bluelight[3]; //sensores por la izquierda
+				double bluelightRight = bluelight[4] + bluelight[5] + bluelight[6] + bluelight[7]; // sensores por la derecha
+
+				/* If light on the left */
+				if ( bluelightLeft > bluelightRight )
+				{
+					//if(){
+						
+					//}
+					/* Turn left */
+					//m_acWheels->SetSpeed(-500,500); 	// gira a la izquierda
+					m_fActivationTable[un_priority][2] = 1.0;
+					m_fActivationTable[un_priority][0] = -SPEED;
+					m_fActivationTable[un_priority][1] = SPEED;
+					
+				}
+				else if(bluelightLeft < bluelightRight)
+				{
+					/* Turn right */
+					//m_acWheels->SetSpeed(500,-500);		// gira a la derecha
+					m_fActivationTable[un_priority][2] = 1.0;
+					m_fActivationTable[un_priority][0] = SPEED;
+					m_fActivationTable[un_priority][1] = -SPEED;
+				}
+				else{	//recto
+					m_fActivationTable[un_priority][2] = 1.0;
+					m_fActivationTable[un_priority][0] = SPEED;
+					m_fActivationTable[un_priority][1] = SPEED;
+				}
+				
+			}if((bluelight[0] * bluelight[7] != 0.0) && (TOTBlueLight != 0)){
+				m_fActivationTable[un_priority][2] = 1.0;
+				m_fActivationTable[un_priority][0] = SPEED;
+				m_fActivationTable[un_priority][1] = SPEED;
+			}
+
 		}else{
-			//m_acWheels->SetSpeed(500,500);		// recto
-			m_fActivationTable[un_priority][2] = 1.0;
-			m_fActivationTable[un_priority][0] = SPEED;
-			m_fActivationTable[un_priority][1] = SPEED;
-		}
-
-	}else
-	{
-		if ( totalLight >= 0.8)
-		{
-			m_seLight->SwitchNearestLight(0);
-			m_pcEpuck->SetAllColoredLeds(LED_COLOR_GREEN);
-			m_fActivationTable[un_priority][2] = 1.0;
-			m_fActivationTable[un_priority][0] = SPEED;
-			m_fActivationTable[un_priority][1] = SPEED;
-			m_NLIGHT = m_NLIGHT +1;
-		}
-		//m_pcEpuck->SetAllColoredLeds(LED_COLOR_YELLOW);
-		/* GO Light */
-		if ( (light[0] * light[7] == 0.0) && (TOTLight != 0))
-		{
-			
-			/* Calc light intensity at the left and right */
-			double lightLeft 	= light[0] + light[1] + light[2] + light[3]; //sensores por la izquierda
-			double lightRight = light[4] + light[5] + light[6] + light[7];		// sensores por la derecha
-
-			/* If light on the left */
-			if ( lightLeft > lightRight )
+			if ( totalLight >= 0.8)
 			{
-				//if(){
-					
-				//}
-				/* Turn left */
-				//m_acWheels->SetSpeed(-500,500); 	// gira a la izquierda
-				m_fActivationTable[un_priority][2] = 1.0;
-				m_fActivationTable[un_priority][0] = -SPEED;
+				m_seLight->SwitchNearestLight(0);
+				m_pcEpuck->SetAllColoredLeds(LED_COLOR_GREEN);
+				m_fActivationTable[un_priority][0] = SPEED;
 				m_fActivationTable[un_priority][1] = SPEED;
-				
+				m_fActivationTable[un_priority][2] = 1.0;
+				m_NLIGHT = m_NLIGHT +1;
 			}
-			else
+			//m_pcEpuck->SetAllColoredLeds(LED_COLOR_YELLOW);
+			/* GO Light */
+			if ( (light[0] * light[7] == 0.0) && (TOTLight != 0))
 			{
-				/* Turn right */
-				//m_acWheels->SetSpeed(500,-500);		// gira a la derecha
+				
+				/* Calc light intensity at the left and right */
+				double lightLeft 	= light[0] + light[1] + light[2] + light[3]; //sensores por la izquierda
+				double lightRight = light[4] + light[5] + light[6] + light[7];		// sensores por la derecha
+
+				/* If light on the left */
+				if ( lightLeft > lightRight )
+				{
+					/* Turn left */
+					//m_acWheels->SetSpeed(-500,500); 	// gira a la izquierda
+					m_fActivationTable[un_priority][2] = 1.0;
+					m_fActivationTable[un_priority][0] = -SPEED;
+					m_fActivationTable[un_priority][1] = SPEED;
+					
+				}
+				else{
+					/* Turn right */
+					//m_acWheels->SetSpeed(500,-500);		// gira a la derecha
+					m_fActivationTable[un_priority][2] = 1.0;
+					m_fActivationTable[un_priority][0] = SPEED;
+					m_fActivationTable[un_priority][1] = -SPEED;
+				}
+			}if((light[0] * light[7] != 0.0) && (TOTLight != 0)){
 				m_fActivationTable[un_priority][2] = 1.0;
 				m_fActivationTable[un_priority][0] = SPEED;
-				m_fActivationTable[un_priority][1] = -SPEED;
+				m_fActivationTable[un_priority][1] = SPEED;
 			}
-			
-		}
-		else{
-			//m_acWheels->SetSpeed(500,500);		// recto
-			m_fActivationTable[un_priority][2] = 1.0;
-			m_fActivationTable[un_priority][0] = SPEED;
-			m_fActivationTable[un_priority][1] = SPEED;
+				
 		}
 	}
 }
@@ -365,15 +367,7 @@ void CSubsumptionLightController::ObstacleAvoidance ( unsigned int un_priority )
 		m_fActivationTable[un_priority][1] = fVLinear + fC1 * fVAngular;
 		m_fActivationTable[un_priority][2] = 1.0;
 	}
-	//Rodea la pared, problema para *luz se aleja por pared
-	/*if((prox[3] * prox[1] * prox[2])*(light[0]+light[1] +light[2]+light[3]+light[4] +light[5]+light[6]+light[7]) != 0){
-		m_fActivationTable[un_priority][2] = 1.0;
-		m_fActivationTable[un_priority][0] = SPEED;
-		m_fActivationTable[un_priority][1] = SPEED;}
-	if((prox[5] * prox[6] * prox[7])*(light[0]+light[1] +light[2]+light[3]+light[4] +light[5]+light[6]+light[7]) != 0){
-		m_fActivationTable[un_priority][2] = 1.0;
-		m_fActivationTable[un_priority][0] = SPEED;
-		m_fActivationTable[un_priority][1] = SPEED;}*/
+
 	if (m_nWriteToFile ) 
 	{
 		/* INIT WRITE TO FILE */
@@ -389,11 +383,25 @@ void CSubsumptionLightController::ObstacleAvoidance ( unsigned int un_priority )
 /******************************************************************************/
 /******************************************************************************/
 
-/*void CSubsumptionLightController::Navigate ( unsigned int un_priority )
-{
-	m_fActivationTable[un_priority][0] = SPEED;
-	m_fActivationTable[un_priority][1] = SPEED;
+void CSubsumptionLightController::Navigate ( unsigned int un_priority )
+{	
+	double* light = m_seLight->GetSensorReading(m_pcEpuck);
+	double* bluelight = m_seBlueLight->GetSensorReading(m_pcEpuck);
+
+	TOTLight = light[0]+light[1]+light[2]+light[3]+light[4]+light[5]+light[6]+light[7];
+	TOTBlueLight = bluelight[0]+bluelight[1]+bluelight[2]+bluelight[3]+bluelight[4]+bluelight[5]+bluelight[6]+bluelight[7];
+	if (fBattToForageInhibitor == 1.0 ){	
+		if(TOTLight == 0 && TOTBlueLight == 0){
+			m_fActivationTable[un_priority][0] = SPEED;
+			m_fActivationTable[un_priority][1] = SPEED;
+		}
+
+	}else{
+		m_fActivationTable[un_priority][0] = SPEED;
+		m_fActivationTable[un_priority][1] = SPEED;
+	}	
 	m_fActivationTable[un_priority][2] = 1.0;
+	
 	if (m_nWriteToFile ) 
 	{
 		// INIT: WRITE TO FILES 
@@ -403,7 +411,7 @@ void CSubsumptionLightController::ObstacleAvoidance ( unsigned int un_priority )
 		fclose(fileOutput);
 		// END WRITE TO FILES 
 	}
-}*/
+}
 		
 /******************************************************************************/
 /******************************************************************************/
@@ -424,7 +432,7 @@ void CSubsumptionLightController::GoLoad ( unsigned int un_priority )
 	if ( battery[0] < BATTERY_THRESHOLD ){
 		/* Set Leds to RED */
 		m_pcEpuck->SetAllColoredLeds(LED_COLOR_RED);
-		
+		fBattToForageInhibitor = 0.0;
 		/* If not pointing to the light */
 		if ( light[0] * light[7] == 0.0 )
 		{
@@ -447,6 +455,8 @@ void CSubsumptionLightController::GoLoad ( unsigned int un_priority )
 			m_fActivationTable[un_priority][0] = SPEED;
 			m_fActivationTable[un_priority][1] = SPEED;
 		}
+	}else{
+		fBattToForageInhibitor = 1.0;	
 	}	
 
 	if (m_nWriteToFile ){

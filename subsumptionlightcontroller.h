@@ -41,6 +41,11 @@ private:
 		double**	m_fActivationTable;
 		double 		m_fTime;
 		double		m_NLIGHT;
+		double fBattToForageInhibitor;
+		double totalBlueLight;
+		double totalLight;
+		double TOTBlueLight;
+		double TOTLight;
 		int m_nWriteToFile;
 		/* Functions */
 
@@ -49,6 +54,7 @@ private:
 		void SwitchLight( unsigned int un_priority );
 		void ObstacleAvoidance ( unsigned int un_priority );
 		void GoLoad ( unsigned int un_priority );
+		void Navigate ( unsigned int un_priority );
 };
 
 #endif
