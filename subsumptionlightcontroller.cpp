@@ -47,7 +47,7 @@ using namespace std;
 #define LED_PRIORITY 2
 
 
-#define PROXIMITY_THRESHOLD 0.7
+#define PROXIMITY_THRESHOLD 0.6
 #define BATTERY_THRESHOLD 0.5
 
 #define SPEED 500.0
@@ -59,8 +59,7 @@ CSubsumptionLightController::CSubsumptionLightController (const char* pch_name, 
 
 {
 	/* Set Write to File */
-	m_nWriteToFile = n_write_to_file;
-	
+	m_nWriteToFile = n_write_to_file;	
 	/* Set epuck */
 	m_pcEpuck = pc_epuck;
 	/* Set Wheels */
@@ -81,6 +80,8 @@ CSubsumptionLightController::CSubsumptionLightController (const char* pch_name, 
         m_seBlueLight =(CBlueLightSensor*) m_pcEpuck->GetSensor(SENSOR_BLUE_LIGHT);
 	/* Set red light sensor*/
 	m_seRedLight = (CRealRedLightSensor*) m_pcEpuck->GetSensor(SENSOR_REAL_RED_LIGHT);
+
+	//CBLueLightSensor* m_seLight = (CBlueLightSensor*) m_pcEpuck->GetSensor(SENSOR_BLUE_LIGHT);
 	
 	/* Initilize Variables */
 	m_fLeftSpeed = 0.0;
@@ -196,60 +197,116 @@ void CSubsumptionLightController::SwitchLight( unsigned int un_priority ){
 
 	double* light = m_seLight->GetSensorReading(m_pcEpuck);
 	double* prox = m_seProx->GetSensorReading(m_pcEpuck);
+	double* bluelight = m_seBlueLight->GetSensorReading(m_pcEpuck);
 
 	double totalLight = 0;
 	double TOTLight = 0;
+	double totalBlueLight = 0;
+	double TOTBlueLight = 0;
   
   	totalLight = light[0]+light[7];
 	TOTLight = light[0]+light[1]+light[2]+light[3]+light[4]+light[5]+light[6]+light[7];
 
+	totalBlueLight = bluelight[0]+bluelight[7];
+	TOTBlueLight = bluelight[0]+bluelight[1]+bluelight[2]+bluelight[3]+bluelight[4]+bluelight[5]+bluelight[6]+bluelight[7];
 
-	if ( totalLight >= 0.8)
-	{
-		m_seLight->SwitchNearestLight(0);
-		m_pcEpuck->SetAllColoredLeds(LED_COLOR_GREEN);
-		m_fActivationTable[un_priority][2] = 1.0;
-		m_fActivationTable[un_priority][0] = SPEED;
-		m_fActivationTable[un_priority][1] = SPEED;
-		m_NLIGHT = m_NLIGHT +1;
-	}
-	//m_pcEpuck->SetAllColoredLeds(LED_COLOR_YELLOW);
-	/* GO Light */
-	if ( (light[0] * light[7] == 0.0) && (TOTLight != 0))
-	{
-		
-		/* Calc light intensity at the left and right */
-		double lightLeft 	= light[0] + light[1] + light[2] + light[3]; //sensores por la izquierda
-		double lightRight = light[4] + light[5] + light[6] + light[7];		// sensores por la derecha
-
-		/* If light on the left */
-		if ( lightLeft > lightRight )
+	if(m_NLIGHT==5){
+		//m_pcEpuck->SetAllColoredLeds(LED_COLOR_YELLOW);
+		if ( totalBlueLight >= 0.8)
 		{
-			//if(){
-				
-			//}
-			/* Turn left */
-			//m_acWheels->SetSpeed(-500,500); 	// gira a la izquierda
-			m_fActivationTable[un_priority][2] = 1.0;
-			m_fActivationTable[un_priority][0] = -SPEED;
-			m_fActivationTable[un_priority][1] = SPEED;
-			
-		}
-		else
-		{
-			/* Turn right */
-			//m_acWheels->SetSpeed(500,-500);		// gira a la derecha
+			m_seBlueLight->SwitchNearestLight(0);
+			m_pcEpuck->SetAllColoredLeds(LED_COLOR_GREEN);
 			m_fActivationTable[un_priority][2] = 1.0;
 			m_fActivationTable[un_priority][0] = SPEED;
-			m_fActivationTable[un_priority][1] = -SPEED;
+			m_fActivationTable[un_priority][1] = SPEED;
 		}
-		
-	}
-	else{
-		//m_acWheels->SetSpeed(500,500);		// recto
-		m_fActivationTable[un_priority][2] = 1.0;
-		m_fActivationTable[un_priority][0] = SPEED;
-		m_fActivationTable[un_priority][1] = SPEED;
+		//m_pcEpuck->SetAllColoredLeds(LED_COLOR_YELLOW);
+		/* GO Light */
+		if ( (bluelight[0] * bluelight[7] == 0.0) && (TOTBlueLight != 0))
+		{
+			
+			/* Calc light intensity at the left and right */
+			double bluelightLeft 	= bluelight[0] + bluelight[1] + bluelight[2] + bluelight[3]; //sensores por la izquierda
+			double bluelightRight = bluelight[4] + bluelight[5] + bluelight[6] + bluelight[7]; // sensores por la derecha
+
+			/* If light on the left */
+			if ( bluelightLeft > bluelightRight )
+			{
+				//if(){
+					
+				//}
+				/* Turn left */
+				//m_acWheels->SetSpeed(-500,500); 	// gira a la izquierda
+				m_fActivationTable[un_priority][2] = 1.0;
+				m_fActivationTable[un_priority][0] = -SPEED;
+				m_fActivationTable[un_priority][1] = SPEED;
+				
+			}
+			else
+			{
+				/* Turn right */
+				//m_acWheels->SetSpeed(500,-500);		// gira a la derecha
+				m_fActivationTable[un_priority][2] = 1.0;
+				m_fActivationTable[un_priority][0] = SPEED;
+				m_fActivationTable[un_priority][1] = -SPEED;
+			}
+			
+		}else{
+			//m_acWheels->SetSpeed(500,500);		// recto
+			m_fActivationTable[un_priority][2] = 1.0;
+			m_fActivationTable[un_priority][0] = SPEED;
+			m_fActivationTable[un_priority][1] = SPEED;
+		}
+
+	}else
+	{
+		if ( totalLight >= 0.8)
+		{
+			m_seLight->SwitchNearestLight(0);
+			m_pcEpuck->SetAllColoredLeds(LED_COLOR_GREEN);
+			m_fActivationTable[un_priority][2] = 1.0;
+			m_fActivationTable[un_priority][0] = SPEED;
+			m_fActivationTable[un_priority][1] = SPEED;
+			m_NLIGHT = m_NLIGHT +1;
+		}
+		//m_pcEpuck->SetAllColoredLeds(LED_COLOR_YELLOW);
+		/* GO Light */
+		if ( (light[0] * light[7] == 0.0) && (TOTLight != 0))
+		{
+			
+			/* Calc light intensity at the left and right */
+			double lightLeft 	= light[0] + light[1] + light[2] + light[3]; //sensores por la izquierda
+			double lightRight = light[4] + light[5] + light[6] + light[7];		// sensores por la derecha
+
+			/* If light on the left */
+			if ( lightLeft > lightRight )
+			{
+				//if(){
+					
+				//}
+				/* Turn left */
+				//m_acWheels->SetSpeed(-500,500); 	// gira a la izquierda
+				m_fActivationTable[un_priority][2] = 1.0;
+				m_fActivationTable[un_priority][0] = -SPEED;
+				m_fActivationTable[un_priority][1] = SPEED;
+				
+			}
+			else
+			{
+				/* Turn right */
+				//m_acWheels->SetSpeed(500,-500);		// gira a la derecha
+				m_fActivationTable[un_priority][2] = 1.0;
+				m_fActivationTable[un_priority][0] = SPEED;
+				m_fActivationTable[un_priority][1] = -SPEED;
+			}
+			
+		}
+		else{
+			//m_acWheels->SetSpeed(500,500);		// recto
+			m_fActivationTable[un_priority][2] = 1.0;
+			m_fActivationTable[un_priority][0] = SPEED;
+			m_fActivationTable[un_priority][1] = SPEED;
+		}
 	}
 }
 
@@ -308,15 +365,15 @@ void CSubsumptionLightController::ObstacleAvoidance ( unsigned int un_priority )
 		m_fActivationTable[un_priority][1] = fVLinear + fC1 * fVAngular;
 		m_fActivationTable[un_priority][2] = 1.0;
 	}
-	/*Rodea la pared, problema para *luz se aleja por pared*/
-	if((prox[3] * prox[1] * prox[2])*(light[0]+light[1] +light[2]+light[3]+light[4] +light[5]+light[6]+light[7]) != 0){
+	//Rodea la pared, problema para *luz se aleja por pared
+	/*if((prox[3] * prox[1] * prox[2])*(light[0]+light[1] +light[2]+light[3]+light[4] +light[5]+light[6]+light[7]) != 0){
 		m_fActivationTable[un_priority][2] = 1.0;
 		m_fActivationTable[un_priority][0] = SPEED;
 		m_fActivationTable[un_priority][1] = SPEED;}
 	if((prox[5] * prox[6] * prox[7])*(light[0]+light[1] +light[2]+light[3]+light[4] +light[5]+light[6]+light[7]) != 0){
 		m_fActivationTable[un_priority][2] = 1.0;
 		m_fActivationTable[un_priority][0] = SPEED;
-		m_fActivationTable[un_priority][1] = SPEED;}
+		m_fActivationTable[un_priority][1] = SPEED;}*/
 	if (m_nWriteToFile ) 
 	{
 		/* INIT WRITE TO FILE */
@@ -359,42 +416,40 @@ void CSubsumptionLightController::GoLoad ( unsigned int un_priority )
 	/* Leer Sensores de Luz */
 	double* light = m_seRedLight->GetSensorReading(m_pcEpuck);
 
+	/* Calc light intensity at the left and right */
+	double lightLeft 	= light[0] + light[1] + light[2] + light[3];
+	double lightRight = light[4] + light[5] + light[6] + light[7];
 
 	/* If battery below a BATTERY_THRESHOLD */
-	if ( battery[0] < BATTERY_THRESHOLD )
-	{
+	if ( battery[0] < BATTERY_THRESHOLD ){
 		/* Set Leds to RED */
 		m_pcEpuck->SetAllColoredLeds(LED_COLOR_RED);
 		
-
 		/* If not pointing to the light */
-		if ( ( light[0] * light[7] == 0.0 ) )
+		if ( light[0] * light[7] == 0.0 )
 		{
 			/* Activate level of competence */
 			m_fActivationTable[un_priority][2] = 1.0;
 
-			/* Calc light intensity at the left and right */
-			double lightLeft 	= light[0] + light[1] + light[2] + light[3];
-			double lightRight = light[4] + light[5] + light[6] + light[7];
-
 			/* If light on the left */
-			if ( lightLeft > lightRight )
-			{
+			if ( lightLeft > lightRight ){
 				/* Turn left */
 				m_fActivationTable[un_priority][0] = -SPEED;
 				m_fActivationTable[un_priority][1] = SPEED;
-			}
-			else
-			{
+					
+			}else{
 				/* Turn right */
 				m_fActivationTable[un_priority][0] = SPEED;
 				m_fActivationTable[un_priority][1] = -SPEED;
 			}
+		}else if(light[0] * light[7] != 0.0){
+			m_fActivationTable[un_priority][2] = 1.0;
+			m_fActivationTable[un_priority][0] = SPEED;
+			m_fActivationTable[un_priority][1] = SPEED;
 		}
 	}	
 
-	if (m_nWriteToFile ) 
-	{
+	if (m_nWriteToFile ){
 		/* INIT WRITE TO FILE */
 		FILE* fileOutput = fopen("outputFiles/batteryOutput", "a");
 		fprintf(fileOutput, "%2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f ", m_fTime, battery[0], light[0], light[1], light[2], light[3], light[4], light[5], light[6], light[7]);

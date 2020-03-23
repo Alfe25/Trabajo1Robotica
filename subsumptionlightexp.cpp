@@ -45,15 +45,15 @@ static char* pchHeightMap =
 "%##################%"
 "%############%%%###%"
 "%##################%"
-"%##%%%%############%"
+"%####%%%###########%"
 "%##################%"
 "%##################%"
 "%##########%%%%%###%"
 "%##################%"
 "%##################%"
 "%##################%"
-"%##################%"
-"%####%%#####%%%####%"
+"%###########%%%####%"
+"%####%%############%"
 "%##################%"
 "%##################%"
 "%%%%%%%%%%%%%%%%%%%%";
@@ -89,9 +89,14 @@ CSubsumptionLightExp::CSubsumptionLightExp(const char* pch_name, const char* par
 		}
 	
 		m_fLightSensorRange = 0.8; // meters
-		m_fBlueLightSensorRange = 0.8;
-		m_fRedLightSensorRange = 3;
+		m_fBlueLightSensorRange = 1.5;
+		m_fRedLightSensorRange = 4;
 		m_nNumberOfLightObject = 8;
+
+		//Parámetros de bateria
+		m_fRedBatterySensorRange=0.5;
+		m_fRedBatteryChargeCoef=0.01;
+		m_fRedBatteryDischargeCoef=0.0005;
 		
 		m_pcvLightObjects = new dVector2[m_nNumberOfLightObject];
 
@@ -172,12 +177,6 @@ CSubsumptionLightExp::CSubsumptionLightExp(const char* pch_name, const char* par
 			
 		}
 
-
-		/*m_pcvBlueLightObjects = new dVector2[m_nNumberOfBlueLightObject];
-		for ( int i = 0 ; i < m_nNumberOfBlueLightObject; i++){
-		m_pcvBlueLightObjects[i].x = getDouble('=',pfile);
-		m_pcvBlueLightObjects[i].y = getDouble('=',pfile);
-		}*/
 		/* Ground Areas */
 		/* Get GroundArea Objects */
 		m_nNumberOfGroundArea = getInt('=',pfile);
@@ -225,7 +224,7 @@ CSubsumptionLightExp::~CSubsumptionLightExp ( void )
 	delete [] m_fGroundAreaColor;
 }
 
-	/******************************************************************************/
+/******************************************************************************/
 /******************************************************************************/
 CArena* CSubsumptionLightExp::CreateArena()
 {
@@ -246,7 +245,6 @@ CArena* CSubsumptionLightExp::CreateArena()
 			pcLightObject->SetCenter(m_pcvLightObjects[i]);
 			pcArena->AddLightObject(pcLightObject);}
 		if(i >= 5 && i <= 6){
-
 			sprintf(pchTemp, "BlueLightObject%d", i);
 			CBlueLightObject* pcBlueLightObject = new CBlueLightObject (pchTemp);
 			pcBlueLightObject->SetCenter(m_pcvLightObjects[i]);
@@ -262,16 +260,6 @@ CArena* CSubsumptionLightExp::CreateArena()
 
 
 	}
-	
-	/*CBlueLightObject* pcBlueLightObject = NULL;
-	for( int i = 0 ; i < m_nNumberOfBlueLightObject ; i++){
-		
-	}*/
-	
-	
-
-
-
 
 
 	/* Create GroundArea */
