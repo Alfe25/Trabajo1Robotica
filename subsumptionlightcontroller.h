@@ -47,7 +47,9 @@ private:
 		double totalLight;
 		double TOTBlueLight;
 		double TOTLight;
-
+		double memoryanterior;
+		double objetorecogido;
+		double totalrecogidos;
 		double memory;
 		int m_nWriteToFile;
 

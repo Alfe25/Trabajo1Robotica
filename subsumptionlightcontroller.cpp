@@ -44,9 +44,9 @@ using namespace std;
 
 #define AVOID_PRIORITY 0
 #define RELOAD_PRIORITY 1
-#define FORAGE_PRIORITY	4
-#define BLUE_LED_PRIORITY 3
 #define LED_PRIORITY 2
+#define BLUE_LED_PRIORITY 3
+#define FORAGE_PRIORITY	4
 #define NAVIGATE_PRIORITY 5
 
 
@@ -90,7 +90,9 @@ CSubsumptionLightController::CSubsumptionLightController (const char* pch_name, 
 	m_NLight = 0.0;
 	m_NBlueLight = 0.0;
 	memory=0.0;
-
+	memoryanterior = 0.0;
+	totalrecogidos = 0.0;
+	objetorecogido = 0.0;
 	/* Create TABLE for the COORDINATOR */
 	m_fActivationTable = new double* [BEHAVIORS];
 	for ( int i = 0 ; i < BEHAVIORS ; i++ )
@@ -182,7 +184,7 @@ void CSubsumptionLightController::Coordinator ( void )
 	m_fLeftSpeed = m_fActivationTable[nBehavior][0];
 	m_fRightSpeed = m_fActivationTable[nBehavior][1];
 	
-  printf("%d %2.4f %2.4f %1.1f %1.0f %1.0f %1.1f \n", nBehavior, m_fLeftSpeed, m_fRightSpeed,fBattInhibitor, m_NLight,m_NBlueLight, memory );
+  printf("%d %2.4f %2.4f %1.1f %1.0f %1.0f %1.1f %1.1f %1.1f \n", nBehavior, m_fLeftSpeed, m_fRightSpeed,fBattInhibitor, m_NLight,m_NBlueLight, memory, objetorecogido,totalrecogidos );
 	printf("\n");	
 
   if (m_nWriteToFile ) 
@@ -190,7 +192,7 @@ void CSubsumptionLightController::Coordinator ( void )
 		// INIT: WRITE TO FILES 
 		// Write coordinator ouputs 
 		FILE* fileOutput = fopen("outputFiles/coordinatorOutput", "a");
-		fprintf(fileOutput,"%2.4f %d %2.4f %2.4f %2.4f %2.4f \n", m_fTime, nBehavior, m_fLeftSpeed, m_fRightSpeed,m_NLight,m_NBlueLight);
+		fprintf(fileOutput,"%2.4f %d %2.4f %2.4f %2.4f  \n", m_fTime, nBehavior, m_fLeftSpeed, m_fRightSpeed,m_NLight);
 		fclose(fileOutput);
 		// END WRITE TO FILES 
 	}
@@ -482,20 +484,47 @@ void CSubsumptionLightController::GoLoad ( unsigned int un_priority )
 
 void CSubsumptionLightController::Forage ( unsigned int un_priority )
 {
+	
+
 	/* Leer Sensores de Suelo Memory */
 	double* groundMemory = m_seGroundMemory->GetSensorReading(m_pcEpuck);
 	
-	/* If with a virtual puck */
-	if(m_NBlueLight==2 && fBattInhibitor==1.0){
+	// If with a virtual puck 
+	if(fBattInhibitor==1.0){
+		if(memory == 1.0 && memoryanterior == 0.0){
+	objetorecogido = objetorecogido + 1 ;
+	memoryanterior = 1.0;
+}
 		if ( memory == 1.0 ){
-			/* Set Leds to BLUE */
+			// Set Leds to BLUE
 			m_pcEpuck->SetAllColoredLeds(LED_COLOR_BLUE);	
 			m_fActivationTable[un_priority][0] = SPEED;
 			m_fActivationTable[un_priority][1] = SPEED;			
 			m_fActivationTable[un_priority][2] = 1.0;					
 		}
-		
+		if(memory == 0.0 && memoryanterior == 1.0){
+	objetorecogido = objetorecogido - 1 ;
+	memoryanterior = 0.0;
+	totalrecogidos = totalrecogidos +1;
+}	
+	
+	
 	}
+	/*if(fBattInhibitor==1.0 &&memory==0.0 && nObject==1.0){
+		m_pcEpuck->SetAllColoredLeds(LED_COLOR_YELLOW);
+	}
+	else if(fBattInhibitor==1.0 && memory==1.0){	
+		m_pcEpuck->SetAllColoredLeds(LED_COLOR_BLUE);	
+		m_fActivationTable[un_priority][0] = SPEED;
+		m_fActivationTable[un_priority][1] = SPEED;			
+		m_fActivationTable[un_priority][2] = 1.0;
+		nObject==1.0;
+	}*/
+	
+	
+		
+	
+	
 	//FILE
 }
 
