@@ -284,7 +284,7 @@ void CIri2Controller::Fuego( unsigned int un_priority ){
 
 	if (fBattInhibitor == 1.0 ){
 
-			if ( totalLight >= 0.8)
+			if ( totalLight >= 0.95)
 			{
 				m_seLight->SwitchNearestLight(0);
 				m_pcEpuck->SetAllColoredLeds(LED_COLOR_GREEN);
