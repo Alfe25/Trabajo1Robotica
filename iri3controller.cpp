@@ -50,7 +50,7 @@ using namespace std;
 #define SERVICIO_PRIORITY 5
 
 /* Threshold to avoid obstacles */
-#define PROXIMITY_THRESHOLD 0.3
+#define PROXIMITY_THRESHOLD 0.5
 /* Threshold to define the battery discharged */
 #define BATTERY_THRESHOLD 0.5
 /* Threshold to reduce the speed of the robot */
@@ -91,14 +91,22 @@ CIri3Controller::CIri3Controller (const char* pch_name, CEpuck* pc_epuck, int n_
 
 	
 	/* Initilize Variables */
+
+	/* Velocidad de las ruedas */
 	m_fLeftSpeed = 0.0;
 	m_fRightSpeed = 0.0;
+	/* Número  de luces amarillas */
 	m_NLight = 0.0;
+	/* Número  de luces azules */
 	m_NBlueLight = 0.0;
+	/* Zona gris = 1.0, desactiva Zona negra = 0.0 */
 	memory=0.0;
 	memoryanterior = 0.0;
+	/* Veces que deja el objeto en la zona negra */
 	totalrecogidos = 0.0;
+	/* Transporta un objeto ahora: 1.0 si, 0.0 no*/
 	objetorecogido = 0.0;
+	/* Bateria */
 	bateria=1.0;
 
 	m_fActivationTable = new double* [BEHAVIORS];
@@ -137,21 +145,7 @@ void CIri3Controller::SimulationStep(unsigned n_step_number, double f_time, doub
 	/* Set Speed to wheels */
 	m_acWheels->SetSpeed(m_fLeftSpeed, m_fRightSpeed);
 
-	if (m_nWriteToFile ) 
-	{
-	/* INIT: WRITE TO FILES */
-	/* Write robot position and orientation */
-		FILE* filePosition = fopen("outputFiles/robotPosition", "a");
-		fprintf(filePosition,"%2.4f %2.4f %2.4f %2.4f\n", m_fTime, m_pcEpuck->GetPosition().x, m_pcEpuck->GetPosition().y, m_pcEpuck->GetRotation());
-		fclose(filePosition);
-
-		/* Write robot wheels speed */
-		FILE* fileWheels = fopen("outputFiles/robotWheels", "a");
-		fprintf(fileWheels,"%2.4f %2.4f %2.4f \n", m_fTime, m_fLeftSpeed, m_fRightSpeed);
-		fclose(fileWheels);
-		/* END WRITE TO FILES */
-	}
-
+	
 }
 
 /******************************************************************************/
@@ -168,6 +162,7 @@ void CIri3Controller::ExecuteBehaviors ( void )
 	fBattInhibitor = 1.0;
 	/* Set Leds to BLACK */
 	m_pcEpuck->SetAllColoredLeds(	LED_COLOR_BLACK);
+	/* Metodos llamados */
 	Esquivar ( ESQUIVAR_PRIORITY );
   	Gasolina ( GASOLINA_PRIORITY );
 	Fuego(FUEGO_PRIORITY);
@@ -230,13 +225,20 @@ void CIri3Controller::Coordinator ( void )
 	{
 		/* INIT: WRITE TO FILES */
 		/* Write coordinator ouputs */
-		FILE* fileOutput = fopen("outputFiles/coordinatorOutput", "a");
-		fprintf(fileOutput,"%2.4f %d %2.4f %2.4f \n", m_fTime, nBehavior, m_fLeftSpeed, m_fRightSpeed);
+		FILE* fileOutput = fopen("outputFiles/coordinator3", "a");
+		fprintf(fileOutput,"%2.4f %d \n", m_fTime, nBehavior);
 		fclose(fileOutput);
 		/* END WRITE TO FILES */
 	} 
 }
-//
+
+/******************************************************************************/
+/******************************************************************************/
+
+/**FUNCION AÑADIDA**/
+
+//Se dirige hacia las luces amarillas y las apaga
+
 void CIri3Controller::Fuego( unsigned int un_priority ){
 
 	double* groundMemory = m_seGroundMemory->GetSensorReading(m_pcEpuck);
@@ -285,7 +287,7 @@ void CIri3Controller::Fuego( unsigned int un_priority ){
 			//m_pcEpuck->SetAllColoredLeds(LED_COLOR_YELLOW);
 			for ( int i = 0 ; i < m_seProx->GetNumberOfInputs() ; i ++ )
 			{
-				if ( light[i] >= 0.8)
+				if ( light[i] >= 0.9)
 				{
 					m_seLight->SwitchNearestLight(0);
 					m_NLight=m_NLight+1;
@@ -293,10 +295,23 @@ void CIri3Controller::Fuego( unsigned int un_priority ){
 				}
 			}
 	}
+	if (m_nWriteToFile ) 
+	{
+		/* INIT WRITE TO FILE */
+		FILE* fileOutput = fopen("outputFiles/luzamarilla3", "a");
+		fprintf(fileOutput, "%2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f ", m_fTime, light[0], light[1], light[2], light[3], light[4], light[5], light[6], light[7]);
+		fclose(fileOutput);
+		/* END WRITE TO FILE */
+	}
+	
 }
+/******************************************************************************/
+/******************************************************************************/
 
+/**FUNCION AÑADIDA**/
 
-//
+//Atiende a las luces azules y las apaga
+
 void CIri3Controller::Refuerzo( unsigned int un_priority ){
 
 	double* groundMemory = m_seGroundMemory->GetSensorReading(m_pcEpuck);
@@ -335,7 +350,7 @@ void CIri3Controller::Refuerzo( unsigned int un_priority ){
 	  m_fActivationTable[un_priority][0] = fRepelent;
 	  m_fActivationTable[un_priority][1] = fMaxBlueLight;	
 
-	if (fBattInhibitor == 1.0 && m_NLight==5 ){
+	if (fBattInhibitor == 1.0 ){
 			
 			m_fActivationTable[un_priority][0] = fRepelent;
 	  		m_fActivationTable[un_priority][1] = fMaxBlueLight;
@@ -351,14 +366,24 @@ void CIri3Controller::Refuerzo( unsigned int un_priority ){
 					m_pcEpuck->SetAllColoredLeds(LED_COLOR_GREEN);			
 				}
 			}
-		
 	}
-	
+	if (m_nWriteToFile ) 
+	{
+		/* INIT WRITE TO FILE */
+		FILE* fileOutput = fopen("outputFiles/luzazul3", "a");
+		fprintf(fileOutput, "%2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f ", m_fTime, bluelight[0], bluelight[1], bluelight[2], bluelight[3], bluelight[4], bluelight[5], bluelight[6], bluelight[7]);
+		fclose(fileOutput);
+		/* END WRITE TO FILE */
+	}
 
 }
 
 /******************************************************************************/
 /******************************************************************************/
+
+/**FUNCION AÑADIDA**/
+
+//Detecta el choque y se aleja de esa dirección
 
 void CIri3Controller::Esquivar ( unsigned int un_priority )
 {	
@@ -411,9 +436,8 @@ void CIri3Controller::Esquivar ( unsigned int un_priority )
 	{
 		/* INIT WRITE TO FILE */
 		/* Write level of competence ouputs */
-		FILE* fileOutput = fopen("outputFiles/avoidOutput", "a");
+		FILE* fileOutput = fopen("outputFiles/esquivar3", "a");
 		fprintf(fileOutput, "%2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f ", m_fTime, prox[0], prox[1], prox[2], prox[3], prox[4], prox[5], prox[6], prox[7], fMaxProx, fRepelent);
-		fprintf(fileOutput, "%2.4f %2.4f %2.4f\n",m_fActivationTable[un_priority][2], m_fActivationTable[un_priority][0], m_fActivationTable[un_priority][1]);
 		fclose(fileOutput);
 		/* END WRITE TO FILE */
 	}
@@ -422,6 +446,10 @@ void CIri3Controller::Esquivar ( unsigned int un_priority )
 
 /******************************************************************************/
 /******************************************************************************/
+
+/**FUNCION AÑADIDA**/
+
+//Circula en linea recta a lo largo de la arena.
 
 void CIri3Controller::Servicio ( unsigned int un_priority )
 {	
@@ -438,7 +466,7 @@ void CIri3Controller::Servicio ( unsigned int un_priority )
 	{
 		/* INIT: WRITE TO FILES */
 		/* Write level of competence ouputs */
-		FILE* fileOutput = fopen("outputFiles/navigateOutput", "a");
+		FILE* fileOutput = fopen("outputFiles/servicio3", "a");
 		fprintf(fileOutput,"%2.4f %2.4f %2.4f %2.4f \n", m_fTime, m_fActivationTable[un_priority][2], m_fActivationTable[un_priority][0], m_fActivationTable[un_priority][1]);
 		fclose(fileOutput);
 		/* END WRITE TO FILES */
@@ -448,6 +476,10 @@ void CIri3Controller::Servicio ( unsigned int un_priority )
 		
 /******************************************************************************/
 /******************************************************************************/
+
+/**FUNCION AÑADIDA**/
+
+//Recarga bateria cuando se acerca a la luz roja y si baja del su threshold se dirige alli.
 
 void CIri3Controller::Gasolina ( unsigned int un_priority )
 {	
@@ -506,9 +538,8 @@ void CIri3Controller::Gasolina ( unsigned int un_priority )
 	if (m_nWriteToFile ) 
 	{
 		/* INIT WRITE TO FILE */
-		FILE* fileOutput = fopen("outputFiles/batteryOutput", "a");
+		FILE* fileOutput = fopen("outputFiles/gasolina3", "a");
 		fprintf(fileOutput, "%2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f ", m_fTime, battery[0], light[0], light[1], light[2], light[3], light[4], light[5], light[6], light[7]);
-		fprintf(fileOutput, "%2.4f %2.4f %2.4f\n",m_fActivationTable[un_priority][2], m_fActivationTable[un_priority][0], m_fActivationTable[un_priority][1]);
 		fclose(fileOutput);
 		/* END WRITE TO FILE */
 	}
@@ -516,6 +547,10 @@ void CIri3Controller::Gasolina ( unsigned int un_priority )
 
 /******************************************************************************/
 /******************************************************************************/
+
+/**FUNCION AÑADIDA**/
+
+//Detecta si el suelo es gris o negro con el fin de sumar objetos
 
 void CIri3Controller::Gato ( unsigned int un_priority )
 {
@@ -547,9 +582,8 @@ void CIri3Controller::Gato ( unsigned int un_priority )
 	if (m_nWriteToFile ) 
 	{
 		/* INIT WRITE TO FILE */
-		FILE* fileOutput = fopen("outputFiles/forageOutput", "a");
+		FILE* fileOutput = fopen("outputFiles/gato3", "a");
 		fprintf(fileOutput, "%2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f ", m_fTime, fBattInhibitor, groundMemory[0], light[0], light[1], light[2], light[3], light[4], light[5], light[6], light[7]);
-		fprintf(fileOutput, "%2.4f %2.4f %2.4f\n",m_fActivationTable[un_priority][2], m_fActivationTable[un_priority][0], m_fActivationTable[un_priority][1]);
 		fclose(fileOutput);
 		/* END WRITE TO FILE */
 	}
