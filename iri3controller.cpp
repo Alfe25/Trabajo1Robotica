@@ -108,7 +108,7 @@ CIri3Controller::CIri3Controller (const char* pch_name, CEpuck* pc_epuck, int n_
 	objetorecogido = 0.0;
 	/* Bateria */
 	bateria=1.0;
-
+	
 	m_fActivationTable = new double* [BEHAVIORS];
 	for ( int i = 0 ; i < BEHAVIORS ; i++ )
 	{
@@ -221,12 +221,14 @@ void CIri3Controller::Coordinator ( void )
 
   m_fLeftSpeed  = fVLinear - fC1 * fVAngular;
   m_fRightSpeed = fVLinear + fC1 * fVAngular;
+
+
 	if (m_nWriteToFile ) 
 	{
 		/* INIT: WRITE TO FILES */
 		/* Write coordinator ouputs */
 		FILE* fileOutput = fopen("outputFiles/coordinator3", "a");
-		fprintf(fileOutput,"%2.4f %d \n", m_fTime, nBehavior);
+		fprintf(fileOutput,"%2.4f %d %2.4f %2.4f \n", m_fTime, nBehavior);
 		fclose(fileOutput);
 		/* END WRITE TO FILES */
 	} 

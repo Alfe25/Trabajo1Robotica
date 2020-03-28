@@ -53,7 +53,7 @@ private:
 		double memory;
 		int m_nWriteToFile;
 		double bateria;
-
+		
 		/* Functions */
 
 		void ExecuteBehaviors ( void );
