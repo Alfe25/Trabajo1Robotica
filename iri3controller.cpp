@@ -108,7 +108,9 @@ CIri3Controller::CIri3Controller (const char* pch_name, CEpuck* pc_epuck, int n_
 	objetorecogido = 0.0;
 	/* Bateria */
 	bateria=1.0;
-	
+	/* Tiempo y dia */	
+	tiempo= 0.0;
+	dia = 1.0;
 	m_fActivationTable = new double* [BEHAVIORS];
 	for ( int i = 0 ; i < BEHAVIORS ; i++ )
 	{
@@ -145,6 +147,12 @@ void CIri3Controller::SimulationStep(unsigned n_step_number, double f_time, doub
 	/* Set Speed to wheels */
 	m_acWheels->SetSpeed(m_fLeftSpeed, m_fRightSpeed);
 
+/* Tiempo */
+if(tiempo >= 120.0){
+  tiempo = tiempo - 120.1;
+	dia=dia+1;}
+
+tiempo = tiempo + 0.1;
 	
 }
 
@@ -160,8 +168,12 @@ void CIri3Controller::ExecuteBehaviors ( void )
 
 	/* Release Inhibitors */
 	fBattInhibitor = 1.0;
-	/* Set Leds to BLACK */
-	m_pcEpuck->SetAllColoredLeds(	LED_COLOR_BLACK);
+	/* Set Leds */
+	if(tiempo <= 60.0){
+	m_pcEpuck->SetAllColoredLeds(LED_COLOR_BLACK);}
+	if(tiempo > 60.0){
+	m_pcEpuck->SetAllColoredLeds(LED_COLOR_YELLOW);}
+	
 	/* Metodos llamados */
 	Esquivar ( ESQUIVAR_PRIORITY );
   	Gasolina ( GASOLINA_PRIORITY );
@@ -193,13 +205,22 @@ void CIri3Controller::Coordinator ( void )
 		if ( m_fActivationTable[nBehavior][2] == 1.0 )
 		{
       /* DEBUG */
+
+printf("\nDia: %3.0f\n",dia);
+if(tiempo <= 60.0){
+printf("\nEs de día\n");
+}if(tiempo > 60.0){
+printf("\nEs de noche\n");
+}
+
       printf("\nComp: %d Ángulo:%2f\n", nBehavior, m_fActivationTable[nBehavior][0]);
-	printf("Batt:%1.4f Fuegos:%1.0f Accidentes:%1.0f Gato:%1.0f Gatos rescatados:%1.0f \n",bateria, m_NLight, m_NBlueLight, objetorecogido , totalrecogidos );
+	printf("Batt:%1.4f Fuegos:%1.0f Accidentes:%1.0f Gato:%1.0f Gatos rescatados:%1.0f Tiempo:%2.1f \n",bateria, m_NLight, m_NBlueLight, objetorecogido , totalrecogidos,tiempo );
       /* DEBUG */
       vAngle.x += m_fActivationTable[nBehavior][1] * cos(m_fActivationTable[nBehavior][0]);
       vAngle.y += m_fActivationTable[nBehavior][1] * sin(m_fActivationTable[nBehavior][0]);
 		}
 	}
+
 
   /* Calc angle of movement */
   fAngle = atan2(vAngle.y, vAngle.x);

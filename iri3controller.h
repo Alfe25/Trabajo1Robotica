@@ -53,7 +53,8 @@ private:
 		double memory;
 		int m_nWriteToFile;
 		double bateria;
-		
+		double tiempo;
+		double dia;
 		/* Functions */
 
 		void ExecuteBehaviors ( void );

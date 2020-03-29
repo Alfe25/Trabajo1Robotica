@@ -51,6 +51,8 @@ private:
 		double objetorecogido;
 		double totalrecogidos;
 		double bateria;
+		double tiempo;
+		double dia;
 
 		double memory;
 		int m_nWriteToFile;

@@ -85,16 +85,25 @@ CIri2Controller::CIri2Controller (const char* pch_name, CEpuck* pc_epuck, int n_
 	m_seRedLight = (CRealRedLightSensor*) m_pcEpuck->GetSensor(SENSOR_REAL_RED_LIGHT);
 
 	/* Initilize Variables */
+	/* Velocidad de las ruedas */
 	m_fLeftSpeed = 0.0;
 	m_fRightSpeed = 0.0;
+	/* Número  de luces amarillas */
 	m_NLight = 0.0;
+	/* Número  de luces azules */
 	m_NBlueLight = 0.0;
+	/* Zona gris = 1.0, desactiva Zona negra = 0.0 */
 	memory=0.0;
 	memoryanterior = 0.0;
+	/* Veces que deja el objeto en la zona negra */
 	totalrecogidos = 0.0;
+	/* Transporta un objeto ahora: 1.0 si, 0.0 no*/
 	objetorecogido = 0.0;
+	/* Bateria */
 	bateria=1.0;
-
+	/* Tiempo y dia */
+	tiempo = 0.0;
+	dia = 1.0;
 	/* Create TABLE for the COORDINATOR */
 	m_fActivationTable = new double* [BEHAVIORS];
 	for ( int i = 0 ; i < BEHAVIORS ; i++ )
@@ -131,6 +140,11 @@ void CIri2Controller::SimulationStep(unsigned n_step_number, double f_time, doub
 
 	/* Set Speed to wheels */
 	m_acWheels->SetSpeed(m_fLeftSpeed, m_fRightSpeed);
+	/* Tiempo */
+	if(tiempo >= 120.0){
+              tiempo = tiempo - 120.1;
+              dia=dia+1;}
+	tiempo = tiempo + 0.1;
 
 	if (m_nWriteToFile ) 
 	{
@@ -159,8 +173,12 @@ void CIri2Controller::ExecuteBehaviors ( void )
 	}
 	/* Release Inhibitors */
 	fBattInhibitor = 1.0;
-	/* Set Leds to BLACK */
-	m_pcEpuck->SetAllColoredLeds(LED_COLOR_BLACK);
+	/* Set Leds */
+	if(tiempo <= 60.0){
+	m_pcEpuck->SetAllColoredLeds(LED_COLOR_BLACK);}
+	if(tiempo > 60.0){
+	m_pcEpuck->SetAllColoredLeds(LED_COLOR_YELLOW);}
+	
 	Esquivar ( ESQUIVAR_PRIORITY );
   	Gasolina ( GASOLINA_PRIORITY );
 	Fuego(FUEGO_PRIORITY);
@@ -185,8 +203,18 @@ void CIri2Controller::Coordinator ( void )
 
 	m_fLeftSpeed = m_fActivationTable[nBehavior][0];
 	m_fRightSpeed = m_fActivationTable[nBehavior][1];
-	
-  printf("Comp:%d Batt:%1.4f Fuegos:%1.0f Accidentes:%1.0f Gato:%1.0f Gatos rescatados:%1.0f \n", nBehavior,bateria, m_NLight, m_NBlueLight, objetorecogido , totalrecogidos );
+
+
+
+printf("\nDia: %3.0f\n",dia);
+if(tiempo <= 60.0){
+printf("\nEs de dia\n");
+}if(tiempo > 60.0){
+printf("\nEs de noche\n");
+}
+
+
+  printf("\nComp:%d Batt:%1.4f Fuegos:%1.0f Accidentes:%1.0f Gato:%1.0f Gatos rescatados:%1.0f Tiempo: %3.1f \n", nBehavior,bateria, m_NLight, m_NBlueLight, objetorecogido , totalrecogidos, tiempo );
 	printf("\n");	
 
   if (m_nWriteToFile ) 
@@ -203,6 +231,10 @@ void CIri2Controller::Coordinator ( void )
 /******************************************************************************/
 /******************************************************************************/
 
+/**FUNCION AÑADIDA**/
+
+//Atiende a las luces azules y las apaga
+
 void CIri2Controller::Refuerzo( unsigned int un_priority ){
 	
 	double* groundMemory = m_seGroundMemory->GetSensorReading(m_pcEpuck);
@@ -213,7 +245,7 @@ void CIri2Controller::Refuerzo( unsigned int un_priority ){
 	TOTBlueLight = bluelight[0]+bluelight[1]+bluelight[2]+bluelight[3]+bluelight[4]+bluelight[5]+bluelight[6]+bluelight[7];
 	memory=groundMemory[0];
 	
-	if (fBattInhibitor == 1.0 && m_NLight==5 ){
+	if (fBattInhibitor == 1.0 ){
 			//m_pcEpuck->SetAllColoredLeds(LED_COLOR_YELLOW);
 			if ( totalBlueLight >= 0.8)
 			{
@@ -269,7 +301,13 @@ void CIri2Controller::Refuerzo( unsigned int un_priority ){
 		
 	}
 }
+/******************************************************************************/
+/******************************************************************************/
+
 /**FUNCION AÑADIDA**/
+
+//Se dirige hacia las luces amarillas y las apaga
+
 void CIri2Controller::Fuego( unsigned int un_priority ){
 
 	double* light = m_seLight->GetSensorReading(m_pcEpuck);
@@ -331,7 +369,12 @@ void CIri2Controller::Fuego( unsigned int un_priority ){
 
 }
 
+/******************************************************************************/
+/******************************************************************************/
 
+/**FUNCION AÑADIDA**/
+
+//Detecta el choque y se aleja de esa dirección
 
 void CIri2Controller::Esquivar ( unsigned int un_priority )
 {
@@ -403,6 +446,10 @@ void CIri2Controller::Esquivar ( unsigned int un_priority )
 /******************************************************************************/
 /******************************************************************************/
 
+/**FUNCION AÑADIDA**/
+
+//Circula en linea recta a lo largo de la arena.
+
 void CIri2Controller::Servicio ( unsigned int un_priority )
 {	
 	double* groundMemory = m_seGroundMemory->GetSensorReading(m_pcEpuck);
@@ -429,6 +476,10 @@ void CIri2Controller::Servicio ( unsigned int un_priority )
 		
 /******************************************************************************/
 /******************************************************************************/
+
+/**FUNCION AÑADIDA**/
+
+//Recarga bateria cuando se acerca a la luz roja y si baja del su threshold se dirige alli.
 
 void CIri2Controller::Gasolina ( unsigned int un_priority )
 {
@@ -486,6 +537,13 @@ void CIri2Controller::Gasolina ( unsigned int un_priority )
 	}
 }
 
+
+/******************************************************************************/
+/******************************************************************************/
+
+/**FUNCION AÑADIDA**/
+
+//Detecta si el suelo es gris o negro con el fin de sumar objetos
 
 void CIri2Controller::Gato ( unsigned int un_priority )
 {
