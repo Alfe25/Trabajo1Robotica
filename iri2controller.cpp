@@ -85,22 +85,14 @@ CIri2Controller::CIri2Controller (const char* pch_name, CEpuck* pc_epuck, int n_
 	m_seRedLight = (CRealRedLightSensor*) m_pcEpuck->GetSensor(SENSOR_REAL_RED_LIGHT);
 
 	/* Initilize Variables */
-
-	/* Velocidad de las ruedas */
 	m_fLeftSpeed = 0.0;
 	m_fRightSpeed = 0.0;
-        /* Número  de luces amarillas */
 	m_NLight = 0.0;
-	/* Número  de luces azules */
 	m_NBlueLight = 0.0;
-	/* Zona gris = 1.0, desactiva Zona negra = 0.0 */
 	memory=0.0;
 	memoryanterior = 0.0;
-        /* Veces que deja el objeto en la zona negra */
 	totalrecogidos = 0.0;
-	/* Transporta un objeto ahora: 1.0 si, 0.0 no*/
 	objetorecogido = 0.0;
-	/* Bateria */
 	bateria=1.0;
 
 	/* Create TABLE for the COORDINATOR */
@@ -140,7 +132,20 @@ void CIri2Controller::SimulationStep(unsigned n_step_number, double f_time, doub
 	/* Set Speed to wheels */
 	m_acWheels->SetSpeed(m_fLeftSpeed, m_fRightSpeed);
 
-	
+	if (m_nWriteToFile ) 
+	{
+	/* INIT: WRITE TO FILES */
+	/* Write robot position and orientation */
+		FILE* filePosition = fopen("outputFiles/robotPosition", "a");
+		fprintf(filePosition,"%2.4f %2.4f %2.4f %2.4f\n", m_fTime, m_pcEpuck->GetPosition().x, m_pcEpuck->GetPosition().y, m_pcEpuck->GetRotation());
+		fclose(filePosition);
+
+		/* Write robot wheels speed */
+		FILE* fileWheels = fopen("outputFiles/robotWheels", "a");
+		fprintf(fileWheels,"%2.4f %2.4f %2.4f %2.4f %2.4f\n", m_fTime, m_fLeftSpeed, m_fRightSpeed, m_NLight, m_NBlueLight);
+		fclose(fileWheels);
+		/* END WRITE TO FILES */
+	}
 }
 
 /******************************************************************************/
@@ -156,7 +161,6 @@ void CIri2Controller::ExecuteBehaviors ( void )
 	fBattInhibitor = 1.0;
 	/* Set Leds to BLACK */
 	m_pcEpuck->SetAllColoredLeds(LED_COLOR_BLACK);
-	/* Metodos llamados */
 	Esquivar ( ESQUIVAR_PRIORITY );
   	Gasolina ( GASOLINA_PRIORITY );
 	Fuego(FUEGO_PRIORITY);
@@ -182,15 +186,15 @@ void CIri2Controller::Coordinator ( void )
 	m_fLeftSpeed = m_fActivationTable[nBehavior][0];
 	m_fRightSpeed = m_fActivationTable[nBehavior][1];
 	
-  printf("Comp:%d Batt:%2.4f Fuegos:%1.0f Accidentes:%1.0f Gato:%1.0f Gatos rescatados:%1.0f \n", nBehavior,bateria, m_NLight, m_NBlueLight, objetorecogido , totalrecogidos );
+  printf("Comp:%d Batt:%1.4f Fuegos:%1.0f Accidentes:%1.0f Gato:%1.0f Gatos rescatados:%1.0f \n", nBehavior,bateria, m_NLight, m_NBlueLight, objetorecogido , totalrecogidos );
 	printf("\n");	
 
   if (m_nWriteToFile ) 
 	{
 		// INIT: WRITE TO FILES 
 		// Write coordinator ouputs 
-		FILE* fileOutput = fopen("outputFiles/coordinator2", "a");
-		fprintf(fileOutput,"%2.4f %d  \n", m_fTime, nBehavior);
+		FILE* fileOutput = fopen("outputFiles/coordinatorOutput", "a");
+		fprintf(fileOutput,"%2.4f %d %2.4f %2.4f %2.4f %2.4f \n", m_fTime, nBehavior, m_fLeftSpeed, m_fRightSpeed,m_NLight,m_NBlueLight);
 		fclose(fileOutput);
 		// END WRITE TO FILES 
 	}
@@ -198,10 +202,6 @@ void CIri2Controller::Coordinator ( void )
 
 /******************************************************************************/
 /******************************************************************************/
-
-/**FUNCION AÑADIDA**/
-
-//Atiende a las luces azules y las apaga
 
 void CIri2Controller::Refuerzo( unsigned int un_priority ){
 	
@@ -213,8 +213,8 @@ void CIri2Controller::Refuerzo( unsigned int un_priority ){
 	TOTBlueLight = bluelight[0]+bluelight[1]+bluelight[2]+bluelight[3]+bluelight[4]+bluelight[5]+bluelight[6]+bluelight[7];
 	memory=groundMemory[0];
 	
-	if (fBattInhibitor == 1.0 ){
-			
+	if (fBattInhibitor == 1.0 && m_NLight==5 ){
+			//m_pcEpuck->SetAllColoredLeds(LED_COLOR_YELLOW);
 			if ( totalBlueLight >= 0.8)
 			{
 				m_seBlueLight->SwitchNearestLight(0);
@@ -224,7 +224,7 @@ void CIri2Controller::Refuerzo( unsigned int un_priority ){
 				m_fActivationTable[un_priority][0] = SPEED;
 				m_fActivationTable[un_priority][1] = SPEED;
 			}
-			
+			//m_pcEpuck->SetAllColoredLeds(LED_COLOR_YELLOW);
 			/* GO Light */
 			if ( (bluelight[0] * bluelight[7] == 0.0) && (TOTBlueLight != 0))
 			{
@@ -268,24 +268,8 @@ void CIri2Controller::Refuerzo( unsigned int un_priority ){
 			}
 		
 	}
-	if (m_nWriteToFile ) 
-	{
-		/* INIT WRITE TO FILE */
-		FILE* fileOutput = fopen("outputFiles/luzazul2", "a");
-		fprintf(fileOutput, "%2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f ", m_fTime, bluelight[0], bluelight[1], bluelight[2], bluelight[3], bluelight[4], bluelight[5], bluelight[6], bluelight[7]);
-		fclose(fileOutput);
-		/* END WRITE TO FILE */
-	}
 }
-
-
-/******************************************************************************/
-/******************************************************************************/
-
 /**FUNCION AÑADIDA**/
-
-//Se dirige hacia las luces amarillas y las apaga
-
 void CIri2Controller::Fuego( unsigned int un_priority ){
 
 	double* light = m_seLight->GetSensorReading(m_pcEpuck);
@@ -309,7 +293,7 @@ void CIri2Controller::Fuego( unsigned int un_priority ){
 				m_fActivationTable[un_priority][2] = 1.0;
 				m_NLight = m_NLight +1;
 			}
-			
+			//m_pcEpuck->SetAllColoredLeds(LED_COLOR_YELLOW);
 			/* GO Light */
 			if ( (light[0] * light[7] == 0.0) && (TOTLight != 0))
 			{
@@ -330,12 +314,12 @@ void CIri2Controller::Fuego( unsigned int un_priority ){
 				}
 				else{
 					/* Turn right */
-										// gira a la derecha
+					//m_acWheels->SetSpeed(500,-500);		// gira a la derecha
 					m_fActivationTable[un_priority][2] = 1.0;
 					m_fActivationTable[un_priority][0] = SPEED;
 					m_fActivationTable[un_priority][1] = -SPEED;
 				}
-			}							//recto
+			}
 			if((light[0] * light[7] != 0.0) && (TOTLight != 0)){
 				m_fActivationTable[un_priority][2] = 1.0;
 				m_fActivationTable[un_priority][0] = SPEED;
@@ -344,23 +328,10 @@ void CIri2Controller::Fuego( unsigned int un_priority ){
 		
 	}
 	/* INIT WRITE TO FILE */
-	if (m_nWriteToFile ) 
-	{
-		/* INIT WRITE TO FILE */
-		FILE* fileOutput = fopen("outputFiles/luzamarilla2", "a");
-		fprintf(fileOutput, "%2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f ", m_fTime, light[0], light[1], light[2], light[3], light[4], light[5], light[6], light[7]);
-		fclose(fileOutput);
-		/* END WRITE TO FILE */
-	}
 
 }
 
-/******************************************************************************/
-/******************************************************************************/
 
-/**FUNCION AÑADIDA**/
-
-//Detecta el choque y se aleja de esa dirección
 
 void CIri2Controller::Esquivar ( unsigned int un_priority )
 {
@@ -399,7 +370,7 @@ void CIri2Controller::Esquivar ( unsigned int un_priority )
 	if ( fMaxProx > PROXIMITY_THRESHOLD )
 	{
 		/* Set Leds to GREEN */
-		m_pcEpuck->SetAllColoredLeds(LED_COLOR_GREEN);
+		m_pcEpuck->SetAllColoredLeds(	LED_COLOR_GREEN);
 
 
 		double fCLinear = 1.0;
@@ -421,8 +392,9 @@ void CIri2Controller::Esquivar ( unsigned int un_priority )
 	{
 		/* INIT WRITE TO FILE */
 		/* Write level of competence ouputs */
-		FILE* fileOutput = fopen("outputFiles/esquivar2", "a");
+		FILE* fileOutput = fopen("outputFiles/avoidOutput", "a");
 		fprintf(fileOutput, "%2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f ", m_fTime, prox[0], prox[1], prox[2], prox[3], prox[4], prox[5], prox[6], prox[7], fMaxProx, fRepelent);
+		fprintf(fileOutput, "%2.4f %2.4f %2.4f\n",m_fActivationTable[un_priority][2], m_fActivationTable[un_priority][0], m_fActivationTable[un_priority][1]);
 		fclose(fileOutput);
 		/* END WRITE TO FILE */
 	}
@@ -430,10 +402,6 @@ void CIri2Controller::Esquivar ( unsigned int un_priority )
 
 /******************************************************************************/
 /******************************************************************************/
-
-/**FUNCION AÑADIDA**/
-
-//Circula en linea recta a lo largo de la arena.
 
 void CIri2Controller::Servicio ( unsigned int un_priority )
 {	
@@ -451,7 +419,7 @@ void CIri2Controller::Servicio ( unsigned int un_priority )
 	{
 		// INIT: WRITE TO FILES 
 		// Write level of competence ouputs 
-		FILE* fileOutput = fopen("outputFiles/servicio2", "a");
+		FILE* fileOutput = fopen("outputFiles/navigateOutput", "a");
 		fprintf(fileOutput,"%2.4f %2.4f %2.4f %2.4f \n", m_fTime, m_fActivationTable[un_priority][2], m_fActivationTable[un_priority][0], m_fActivationTable[un_priority][1]);
 		fclose(fileOutput);
 		// END WRITE TO FILES 
@@ -461,10 +429,6 @@ void CIri2Controller::Servicio ( unsigned int un_priority )
 		
 /******************************************************************************/
 /******************************************************************************/
-
-/**FUNCION AÑADIDA**/
-
-//Recarga bateria cuando se acerca a la luz roja y si baja del su threshold se dirige alli.
 
 void CIri2Controller::Gasolina ( unsigned int un_priority )
 {
@@ -514,23 +478,21 @@ void CIri2Controller::Gasolina ( unsigned int un_priority )
 
 	if (m_nWriteToFile ){
 		/* INIT WRITE TO FILE */
-		FILE* fileOutput = fopen("outputFiles/gasolina2", "a");
+		FILE* fileOutput = fopen("outputFiles/batteryOutput", "a");
 		fprintf(fileOutput, "%2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f %2.4f ", m_fTime, battery[0], light[0], light[1], light[2], light[3], light[4], light[5], light[6], light[7]);
+		fprintf(fileOutput, "%2.4f %2.4f %2.4f\n",m_fActivationTable[un_priority][2], m_fActivationTable[un_priority][0], m_fActivationTable[un_priority][1]);
+		fclose(fileOutput);
 		/* END WRITE TO FILE */
 	}
 }
-/******************************************************************************/
-/******************************************************************************/
 
-/**FUNCION AÑADIDA**/
-
-//Detecta si el suelo es gris o negro con el fin de sumar objetos
 
 void CIri2Controller::Gato ( unsigned int un_priority )
 {
+	
+
 	/* Leer Sensores de Suelo Memory */
 	double* groundMemory = m_seGroundMemory->GetSensorReading(m_pcEpuck);
-	double* light = m_seLight->GetSensorReading(m_pcEpuck);
 	
 	// If with a virtual puck 
 	if(fBattInhibitor==1.0){
@@ -552,16 +514,21 @@ void CIri2Controller::Gato ( unsigned int un_priority )
 		}	
 	
 	}
+	/*if(fBattInhibitor==1.0 &&memory==0.0 && nObject==1.0){
+		m_pcEpuck->SetAllColoredLeds(LED_COLOR_YELLOW);
+	}
+	else if(fBattInhibitor==1.0 && memory==1.0){	
+		m_pcEpuck->SetAllColoredLeds(LED_COLOR_BLUE);	
+		m_fActivationTable[un_priority][0] = SPEED;
+		m_fActivationTable[un_priority][1] = SPEED;			
+		m_fActivationTable[un_priority][2] = 1.0;
+		nObject==1.0;
+	}*/
+	
+	
+		
+	
 	
 	//FILE
-	if (m_nWriteToFile ) 
-	{
-		/* INIT WRITE TO FILE */
-		FILE* fileOutput = fopen("outputFiles/gato2", "a");
-		fprintf(fileOutput, "%2.4f %2.4f %2.4f  ", m_fTime, fBattInhibitor, groundMemory[0]);
-		
-		fclose(fileOutput);
-		/* END WRITE TO FILE */
-	}
 }
 
