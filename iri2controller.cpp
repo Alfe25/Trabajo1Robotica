@@ -182,7 +182,7 @@ void CIri2Controller::Coordinator ( void )
 	m_fLeftSpeed = m_fActivationTable[nBehavior][0];
 	m_fRightSpeed = m_fActivationTable[nBehavior][1];
 	
-  printf("Comp:%d Batt:%1.4f Fuegos:%1.0f Accidentes:%1.0f Gato:%1.0f Gatos rescatados:%1.0f \n", nBehavior,bateria, m_NLight, m_NBlueLight, objetorecogido , totalrecogidos );
+  printf("Comp:%d Batt:%2.4f Fuegos:%1.0f Accidentes:%1.0f Gato:%1.0f Gatos rescatados:%1.0f \n", nBehavior,bateria, m_NLight, m_NBlueLight, objetorecogido , totalrecogidos );
 	printf("\n");	
 
   if (m_nWriteToFile ) 
@@ -543,7 +543,7 @@ void CIri2Controller::Gato ( unsigned int un_priority )
 			m_pcEpuck->SetAllColoredLeds(LED_COLOR_BLUE);	
 			m_fActivationTable[un_priority][0] = SPEED;
 			m_fActivationTable[un_priority][1] = SPEED;			
-			m_fActivationTable[un_priority][2] = 1.0;					
+			m_fActivationTable[un_priority][2] = 1.0; 1.0;					
 		}
 		if(memory == 0.0 && memoryanterior == 1.0){
 			objetorecogido = objetorecogido - 1 ;
